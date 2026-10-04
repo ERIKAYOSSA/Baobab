@@ -1,44 +1,58 @@
 import "./App.css";
-
+import { LuFingerprint } from "react-icons/lu";
 function App() {
   return (
-    <div className="welcome-container">
-      <div className="language-selector">
-        <button>🇫🇷 Français</button>
-        <button>🇬🇧 English</button>
-        <button>🇹🇿 Kiswahili</button>
+    <div className="welcome-page">
+
+      <div className="background-glow"></div>
+
+      <div className="logo-wrapper">
+        <img src="./logo-baobab.jpg" alt="" height={35} width={210}/>
       </div>
 
-      <div className="welcome-content">
-        <h1 className="logo">🌳 BAOBAB</h1>
+      <h1 className="app-title">Baobab</h1>
 
-        <h2>
-          Ton arbre.
-          <br />
-          Ta famille.
-          <br />
-          Ton héritage.
-        </h2>
+      <p className="tagline">
+        Ton arbre. Ta famille.
+        <br />
+        Ton héritage.
+      </p>
 
-        <p className="subtitle">
-          Le premier réseau mémoriel permettant de préserver et transmettre
-          l'histoire de votre famille à travers les générations.
-        </p>
+      <div className="features">
 
-        <div className="buttons">
-          <button className="primary-btn">
-            Commencer
-          </button>
-
-          <button className="secondary-btn">
-            Voir la démo
-          </button>
+        <div className="feature-card">
+          <h3>Arbre</h3>
+          <span>vivant</span>
         </div>
 
-        <p className="login-link">
-          J'ai déjà un compte
-        </p>
+        <div className="feature-card">
+          <h3>Liens</h3>
+          <span>retrouvés</span>
+        </div>
+
+        <div className="feature-card">
+          <h3>Culture</h3>
+          <span>préservée</span>
+        </div>
+
       </div>
+
+      <button className="start-btn">
+  <LuFingerprint className="fingerprint-icon" />
+  <span>Commencer</span>
+</button>
+      <button className="demo-btn">
+        Voir la démo
+      </button>
+
+      <p className="login-link">
+        J'ai déjà un compte
+      </p>
+
+      <p className="languages">
+        Disponible en Français · English · Kiswahili
+      </p>
+
     </div>
   );
 }
