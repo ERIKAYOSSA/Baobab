@@ -1,59 +1,44 @@
-import "./App.css";
-import { LuFingerprint } from "react-icons/lu";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+
+import Welcome from "./pages/Welcome";
+import Phone from "./pages/Phone";
+import Identity from "./pages/Identity";
+import Document from "./pages/Document";
+import Culture from "./pages/culture";
+import SearchFamily from "./pages/SearchFamily";
 function App() {
   return (
-    <div className="welcome-page">
+    <BrowserRouter>
+      <Routes>
 
-      <div className="background-glow"></div>
+        <Route
+          path="/"
+          element={<Welcome />}
+        />
 
-      <div className="logo-wrapper">
-        <img src="./logo-baobab.jpg" alt="" height={35} width={210}/>
-      </div>
+        <Route
+          path="/telephone"
+          element={<Phone />}
+        />
+        <Route
+          path="/identity"
+          element={<Identity />}
+        />
+        <Route
+          path="/document"
+          element={<Document />}
+        />
+        <Route
+          path="/culture"
+          element={<Culture />}
+        />
+        <Route
+          path="/search-family"
+          element={<SearchFamily />}
+        />
 
-      <h1 className="app-title">Baobab</h1>
-
-      <p className="tagline">
-        Ton arbre. Ta famille.
-        <br />
-        Ton héritage.
-      </p>
-
-      <div className="features">
-
-        <div className="feature-card">
-          <h3>Arbre</h3>
-          <span>vivant</span>
-        </div>
-
-        <div className="feature-card">
-          <h3>Liens</h3>
-          <span>retrouvés</span>
-        </div>
-
-        <div className="feature-card">
-          <h3>Culture</h3>
-          <span>préservée</span>
-        </div>
-
-      </div>
-
-      <button className="start-btn">
-  <LuFingerprint className="fingerprint-icon" />
-  <span>Commencer</span>
-</button>
-      <button className="demo-btn">
-        Voir la démo
-      </button>
-
-      <p className="login-link">
-        J'ai déjà un compte
-      </p>
-
-      <p className="languages">
-        Disponible en Français · English · Kiswahili
-      </p>
-
-    </div>
+      </Routes>
+    </BrowserRouter>
   );
 }
 
