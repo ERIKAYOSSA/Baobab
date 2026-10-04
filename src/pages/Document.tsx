@@ -13,7 +13,6 @@ function Document() {
     useState(false);
     const [file, setFile] = useState<File | null>(null);
 
-const [preview, setPreview] = useState<string>("");
 
   const handleFileChange = (
   e: React.ChangeEvent<HTMLInputElement>
@@ -24,11 +23,7 @@ const [preview, setPreview] = useState<string>("");
 
   setFile(selected);
 
-  if (selected.type.startsWith("image")) {
-    setPreview(
-      URL.createObjectURL(selected)
-    );
-  }
+  
 };
 
   return (
@@ -120,9 +115,7 @@ const [preview, setPreview] = useState<string>("");
 
     <p>{file.name}</p>
 
-    {file.type.startsWith("image/") && preview && (
-      {preview}
-    )}
+
 
     {file.type === "application/pdf" && (
       <div className="pdf-preview">
@@ -135,7 +128,7 @@ const [preview, setPreview] = useState<string>("");
         <button
           className="continue-btn"
           onClick={() =>
-            navigate("/culture")
+            navigate("/colture")
           }
         >
           {documentUploaded

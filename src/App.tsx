@@ -4,8 +4,8 @@ import Welcome from "./pages/Welcome";
 import Phone from "./pages/Phone";
 import Identity from "./pages/Identity";
 import Document from "./pages/Document";
-import Culture from "./pages/culture";
 import SearchFamily from "./pages/SearchFamily";
+import Colture from "./pages/Colture";
 function App() {
   return (
     <BrowserRouter>
@@ -29,12 +29,12 @@ function App() {
           element={<Document />}
         />
         <Route
-          path="/culture"
-          element={<Culture />}
-        />
-        <Route
           path="/search-family"
           element={<SearchFamily />}
+        />
+        <Route
+          path="/colture"
+          element={<Colture />}
         />
 
       </Routes>
