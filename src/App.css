@@ -1423,3 +1423,24 @@ padding: 14px;
 
   flex-shrink: 0;
 }
+input,
+select,
+textarea {
+  color: #24150b !important;
+}
+.phone-input {
+  color: #24150b !important;
+}
+.otp-boxes input {
+  color: #24150b !important;
+
+  font-weight: 600;
+}
+.field-content select {
+  color: #24150b !important;
+}
+.field-content option {
+  color: #24150b;
+  background: white;
+}
+``
