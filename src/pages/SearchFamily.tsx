@@ -24,7 +24,7 @@ function SearchFamily() {
 
           <button
             className="back-btn"
-            onClick={() => navigate("/culture")}
+            onClick={() => navigate("/colture")}
           >
             <FaArrowLeft />
           </button>
