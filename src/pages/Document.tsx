@@ -92,7 +92,7 @@ function Document() {
 </label>
         <button
   className="later-card"
-  onClick={() => navigate("/culture")}
+  onClick={() => navigate("/colture")}
 >
 
   <FaClock className="document-icon" />
