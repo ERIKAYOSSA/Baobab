@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useContext, useState } from "react";
 import {
   FaArrowLeft,
   FaGlobeAfrica,
@@ -8,23 +8,46 @@ import {
   FaMapMarkerAlt
 } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
+import { SignupContext } from "../context/SignupContext";
 
-function Culture() {
+function Colture() {
   const navigate = useNavigate();
 
-  const [nationality, setNationality] = useState("");
-  const [language, setLanguage] = useState("");
-  const [ethnicity, setEthnicity] = useState("");
-  const [region, setRegion] = useState("");
-  const [error, setError] = useState("");
+  const { signupData, setSignupData } =
+    useContext(SignupContext);
+
+  const [nationality, setNationality] =
+    useState("");
+
+  const [language, setLanguage] =
+    useState("");
+
+  const [ethnicity, setEthnicity] =
+    useState("");
+
+  const [region, setRegion] =
+    useState("");
+
+  const [error, setError] =
+    useState("");
 
   const handleContinue = () => {
+    setError("");
+
     if (!nationality) {
       setError(
         "Veuillez sélectionner votre nationalité."
       );
       return;
     }
+
+    setSignupData({
+      ...signupData,
+      nationalite: nationality,
+      langue: language,
+      ethnie: ethnicity,
+      region: region,
+    });
 
     navigate("/search-family");
   };
@@ -34,6 +57,7 @@ function Culture() {
       <div className="registration-card">
 
         <div className="progress-header">
+
           <button
             className="back-btn"
             onClick={() => navigate("/document")}
@@ -51,6 +75,7 @@ function Culture() {
           <span className="step-number">
             4/5
           </span>
+
         </div>
 
         <div className="title-section">
@@ -60,23 +85,23 @@ function Culture() {
           </div>
 
           <div>
-            <h1>Identité culturelle</h1>
+            <h1>
+              Identité culturelle
+            </h1>
 
             <p>
               Ces informations nous aideront à
-              retrouver des liens familiaux et à
-              préserver votre héritage culturel.
+              retrouver des liens familiaux
+              et préserver votre héritage.
             </p>
           </div>
 
         </div>
 
         <div className="culture-tip">
-           Aidez Baobab à reconstruire vos
+          🌳 Aidez Baobab à reconstruire vos
           racines familiales.
         </div>
-
-        {/* Nationalité */}
 
         <div className="modern-field">
 
@@ -93,28 +118,52 @@ function Culture() {
             <select
               value={nationality}
               onChange={(e) =>
-                setNationality(e.target.value)
+                setNationality(
+                  e.target.value
+                )
               }
             >
               <option value="">
                 Choisir une nationalité
               </option>
 
-              <option>🇨🇲 Cameroun</option>
-              <option>🇨🇬 Congo</option>
-              <option>🇬🇦 Gabon</option>
-              <option>🇹🇩 Tchad</option>
-              <option>🇨🇫 Centrafrique</option>
-              <option>🇳🇬 Nigeria</option>
-              <option>🇫🇷 France</option>
-              <option>🇨🇦 Canada</option>
+              <option>
+                🇨🇲 Cameroun
+              </option>
+
+              <option>
+                🇨🇬 Congo
+              </option>
+
+              <option>
+                🇬🇦 Gabon
+              </option>
+
+              <option>
+                🇹🇩 Tchad
+              </option>
+
+              <option>
+                🇨🇫 Centrafrique
+              </option>
+
+              <option>
+                🇳🇬 Nigeria
+              </option>
+
+              <option>
+                🇫🇷 France
+              </option>
+
+              <option>
+                🇨🇦 Canada
+              </option>
+
             </select>
 
           </div>
 
         </div>
-
-        {/* Langue */}
 
         <div className="modern-field">
 
@@ -131,28 +180,52 @@ function Culture() {
             <select
               value={language}
               onChange={(e) =>
-                setLanguage(e.target.value)
+                setLanguage(
+                  e.target.value
+                )
               }
             >
               <option value="">
                 Choisir une langue
               </option>
 
-              <option>Français</option>
-              <option>Anglais</option>
-              <option>Ewondo</option>
-              <option>Bassa</option>
-              <option>Douala</option>
-              <option>Fulfulde</option>
-              <option>Lingala</option>
-              <option>Swahili</option>
+              <option>
+                Français
+              </option>
+
+              <option>
+                Anglais
+              </option>
+
+              <option>
+                Ewondo
+              </option>
+
+              <option>
+                Bassa
+              </option>
+
+              <option>
+                Douala
+              </option>
+
+              <option>
+                Fulfulde
+              </option>
+
+              <option>
+                Lingala
+              </option>
+
+              <option>
+                Swahili
+              </option>
+
             </select>
 
           </div>
 
         </div>
-
-        {/* Ethnie */}
 
         <div className="modern-field">
 
@@ -169,7 +242,9 @@ function Culture() {
             <select
               value={ethnicity}
               onChange={(e) =>
-                setEthnicity(e.target.value)
+                setEthnicity(
+                  e.target.value
+                )
               }
             >
               <option value="">
@@ -183,13 +258,12 @@ function Culture() {
               <option>Peul</option>
               <option>Fang</option>
               <option>Kongo</option>
+
             </select>
 
           </div>
 
         </div>
-
-        {/* Région */}
 
         <div className="modern-field">
 
@@ -206,7 +280,9 @@ function Culture() {
             <select
               value={region}
               onChange={(e) =>
-                setRegion(e.target.value)
+                setRegion(
+                  e.target.value
+                )
               }
             >
               <option value="">
@@ -220,7 +296,10 @@ function Culture() {
               <option>Nord</option>
               <option>Est</option>
               <option>Adamaoua</option>
-              <option>Extrême-Nord</option>
+              <option>
+                Extrême-Nord
+              </option>
+
             </select>
 
           </div>
@@ -245,4 +324,4 @@ function Culture() {
   );
 }
 
-export default Culture;
+export default Colture;

@@ -1,39 +1,62 @@
-import { FaArrowLeft, FaIdCard } from "react-icons/fa";
-import { useNavigate } from "react-router-dom";
-import { useState } from "react";
+import { useContext, useState } from "react";
 import {
+  FaArrowLeft,
+  FaIdCard,
   FaUpload,
   FaClock
 } from "react-icons/fa";
+import { useNavigate } from "react-router-dom";
+import { SignupContext } from "../context/SignupContext";
 
 function Document() {
   const navigate = useNavigate();
 
-  const [documentUploaded] =
-    useState(false);
-    const [file, setFile] = useState<File | null>(null);
+  const { signupData, setSignupData } =
+    useContext(SignupContext);
 
+  const [file, setFile] = useState<File | null>(
+    null
+  );
 
   const handleFileChange = (
-  e: React.ChangeEvent<HTMLInputElement>
-) => {
-  const selected = e.target.files?.[0];
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const selected = e.target.files?.[0];
 
-  if (!selected) return;
+    if (!selected) return;
 
-  setFile(selected);
+    setFile(selected);
+  };
 
-  
-};
+  const handleContinue = () => {
+    setSignupData({
+      ...signupData,
+      document: file ? file.name : "",
+    });
+
+    navigate("/colture");
+  };
+
+  const handleSkip = () => {
+    setSignupData({
+      ...signupData,
+      document: "",
+    });
+
+    navigate("/colture");
+  };
 
   return (
     <div className="phone-page">
       <div className="registration-card">
 
         <div className="progress-header">
+
           <button
             className="back-btn"
-            onClick={() => navigate("/identity")}
+            onClick={() =>
+              navigate("/identity")
+            }
           >
             <FaArrowLeft />
           </button>
@@ -48,6 +71,7 @@ function Document() {
           <span className="step-number">
             3/5
           </span>
+
         </div>
 
         <div className="title-section">
@@ -57,12 +81,14 @@ function Document() {
           </div>
 
           <div>
-            <h1>Pièce d'identité</h1>
+            <h1>
+              Pièce d'identité
+            </h1>
 
             <p>
               Pour vérifier ton profil et
               renforcer la confiance dans
-              l'arbre familial.
+              ton arbre familial.
             </p>
           </div>
 
@@ -70,68 +96,73 @@ function Document() {
 
         <label className="document-card">
 
-  <FaUpload className="document-icon" />
+          <FaUpload className="document-icon" />
 
-  <div className="document-content">
+          <div className="document-content">
 
-    <h3>Téléverser ma pièce d'identité</h3>
+            <h3>
+              Téléverser ma pièce
+            </h3>
 
-    <span>
-      CNI, Passeport ou Permis
-    </span>
+            <span>
+              CNI, Passeport ou Permis
+            </span>
 
-    <input
-      type="file"
-      hidden
-      accept=".jpg,.jpeg,.png,.pdf"
-      onChange={handleFileChange}
-    />
+            <input
+              type="file"
+              hidden
+              accept=".jpg,.jpeg,.png,.pdf"
+              onChange={handleFileChange}
+            />
 
-  </div>
+          </div>
 
-</label>
+        </label>
+
         <button
-  className="later-card"
-  onClick={() => navigate("/colture")}
->
+          className="later-card"
+          onClick={handleSkip}
+        >
+          <FaClock className="document-icon" />
 
-  <FaClock className="document-icon" />
+          <div className="document-content">
 
-  <div className="document-content">
+            <h3>
+              Plus tard
+            </h3>
 
-    <h3>Plus tard</h3>
+            <span>
+              Continuer sans document
+            </span>
 
-    <span>
-      Continuer sans document
-    </span>
+          </div>
 
-  </div>
+        </button>
 
-</button>
-{file && (
-  <div className="preview-card">
+        {file && (
+          <div className="preview-card">
 
-    <h4>Document sélectionné</h4>
+            <h4>
+              Document sélectionné
+            </h4>
 
-    <p>{file.name}</p>
+            <p>{file.name}</p>
 
+            {file.type ===
+              "application/pdf" && (
+              <div className="pdf-preview">
+                📄 PDF sélectionné
+              </div>
+            )}
 
+          </div>
+        )}
 
-    {file.type === "application/pdf" && (
-      <div className="pdf-preview">
-        📄 PDF sélectionné
-      </div>
-    )}
-
-  </div>
-)}
         <button
           className="continue-btn"
-          onClick={() =>
-            navigate("/colture")
-          }
+          onClick={handleContinue}
         >
-          {documentUploaded
+          {file
             ? "Continuer →"
             : "Ignorer →"}
         </button>

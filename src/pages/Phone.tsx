@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { FaArrowLeft, FaPhoneAlt, FaCheckCircle } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
+import { useContext } from "react";
+import { SignupContext } from "../context/SignupContext";
 
 function Phone() {
   const navigate = useNavigate();
@@ -13,6 +15,8 @@ const [success, setSuccess] = useState(false);
 
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const { signupData, setSignupData } =
+  useContext(SignupContext);
 
   const [otp, setOtp] = useState([
     "",
@@ -94,6 +98,11 @@ const handleKeyDown = (
   }
 
   setSuccess(true);
+  setSignupData({
+  ...signupData,
+  telephone: phone,
+  motDePasse: password,
+});
 
   setTimeout(() => {
     navigate("/identity");
@@ -252,4 +261,3 @@ const handleKeyDown = (
 }
 
 export default Phone;
-``

@@ -1,13 +1,52 @@
-import { useState } from "react";
+import { useContext, useState } from "react";
 import { FaArrowLeft, FaUserCircle } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
+import { SignupContext } from "../context/SignupContext";
 
 function Identity() {
   const navigate = useNavigate();
 
+  const { signupData, setSignupData } =
+    useContext(SignupContext);
+
   const [fullName, setFullName] = useState("");
   const [birthDate, setBirthDate] = useState("");
   const [gender, setGender] = useState("");
+  const [error, setError] = useState("");
+
+  const handleContinue = () => {
+    setError("");
+
+    if (!fullName.trim()) {
+      setError(
+        "Veuillez saisir votre nom complet."
+      );
+      return;
+    }
+
+    if (!birthDate) {
+      setError(
+        "Veuillez sélectionner votre date de naissance."
+      );
+      return;
+    }
+
+    if (!gender) {
+      setError(
+        "Veuillez sélectionner votre genre."
+      );
+      return;
+    }
+
+    setSignupData({
+      ...signupData,
+      nomComplet: fullName,
+      dateNaissance: birthDate,
+      genre: gender,
+    });
+
+    navigate("/document");
+  };
 
   return (
     <div className="phone-page">
@@ -26,7 +65,7 @@ function Identity() {
             <div
               className="progress-fill"
               style={{ width: "40%" }}
-            ></div>
+            />
           </div>
 
           <span className="step-number">
@@ -45,26 +84,30 @@ function Identity() {
             <h1>Qui es-tu ?</h1>
 
             <p>
-              Ces informations nous aident à
-              construire ton arbre familial.
+              Ces informations nous aideront
+              à construire ton arbre familial.
             </p>
           </div>
 
         </div>
 
-        <label>Nom complet</label>
+        <label>
+          Nom complet
+        </label>
 
         <input
           type="text"
           className="phone-input"
-          placeholder="Ex : Koto Mvetch"
+          placeholder="Ex : Eric nem"
           value={fullName}
           onChange={(e) =>
             setFullName(e.target.value)
           }
         />
 
-        <label>Date de naissance</label>
+        <label>
+          Date de naissance
+        </label>
 
         <input
           type="date"
@@ -75,11 +118,14 @@ function Identity() {
           }
         />
 
-        <label>Genre</label>
+        <label>
+          Genre
+        </label>
 
         <div className="gender-container">
 
           <button
+            type="button"
             className={
               gender === "Femme"
                 ? "gender-btn active"
@@ -93,6 +139,7 @@ function Identity() {
           </button>
 
           <button
+            type="button"
             className={
               gender === "Homme"
                 ? "gender-btn active"
@@ -105,13 +152,17 @@ function Identity() {
             Homme
           </button>
 
-          
-
         </div>
+
+        {error && (
+          <p className="error-message">
+            {error}
+          </p>
+        )}
 
         <button
           className="continue-btn"
-          onClick={() => navigate("/document")}
+          onClick={handleContinue}
         >
           Continuer →
         </button>
