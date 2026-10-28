@@ -1,0 +1,23 @@
+services:
+  - type: web
+    name: baobab-api
+    runtime: docker
+    plan: free
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: OTP_LOG
+        value: "true"
+      - key: NEO4J_URI
+        sync: false
+      - key: NEO4J_USER
+        value: neo4j
+      - key: NEO4J_PASSWORD
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true
+      - key: JWT_ACCESS_EXPIRES_IN
+        value: 2h
+      - key: JWT_REFRESH_EXPIRES_IN
+        value: 30d
