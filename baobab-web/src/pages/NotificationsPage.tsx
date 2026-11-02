@@ -13,9 +13,9 @@ import {
   Loader2,
 } from "lucide-react";
 import { toast } from "sonner";
-import { useLinkRequests, resolveLinkRequest, statusLabel, type LinkStatus } from "@/lib/linkRequests";
-import { useAuth } from "@/lib/auth/AuthProvider";
-import { ApiError, decideRequest, getNotifications, type NotificationsPayload } from "@/lib/api";
+import { useLinkRequests, resolveLinkRequest, statusLabel, type LinkStatus } from "../lib/linkRequests";
+import { useAuth } from "../lib/auth/AuthProvider";
+import { ApiError, decideRequest, getNotifications, type NotificationsPayload } from "../lib/api";
 
 const demoItems = [
   {

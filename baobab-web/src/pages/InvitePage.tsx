@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { CheckCircle2, XCircle, Loader2, Sparkles, ShieldCheck } from "lucide-react";
-import { redeemInvite, type TesterSession } from "@/lib/testerAccess";
+import { redeemInvite, type TesterSession } from "../lib/testerAccess";
 
 export function InvitePage() {
   const { code = "" } = useParams();

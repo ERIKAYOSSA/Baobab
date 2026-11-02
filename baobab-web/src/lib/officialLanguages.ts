@@ -1,5 +1,5 @@
-import { detectDefaultDial, DIAL_COUNTRIES } from "@/lib/phoneCountries";
-import { LOCALES, LOCALE_LABELS, type Locale } from "@/lib/i18n/translations";
+import { detectDefaultDial, DIAL_COUNTRIES } from "../lib/phoneCountries";
+import { LOCALES, LOCALE_LABELS, type Locale } from "../lib/i18n/translations";
 
 /** Langues d’UI proposées selon le pays (indicatif / fuseau). Affinage ultérieur possible. */
 const OFFICIAL_UI_BY_ISO: Record<string, Locale[]> = {

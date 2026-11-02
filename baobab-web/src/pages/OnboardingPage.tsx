@@ -21,8 +21,8 @@ import {
   Camera,
 } from "lucide-react";
 import { toast } from "sonner";
-import { sendLinkRequest, useLinkRequest, statusLabel } from "@/lib/linkRequests";
-import { useAuth } from "@/lib/auth/AuthProvider";
+import { sendLinkRequest, useLinkRequest, statusLabel } from "../lib/linkRequests";
+import { useAuth } from "../lib/auth/AuthProvider";
 import {
   ApiError,
   createPerson,
@@ -34,19 +34,19 @@ import {
   splitFullName,
   verifyOtp,
   type ApiPerson,
-} from "@/lib/api";
-import { buildE164, detectDefaultDial, DIAL_COUNTRIES, countryByDial } from "@/lib/phoneCountries";
-import { detectCountryIso } from "@/lib/officialLanguages";
-import { citiesForCountry, searchCities } from "@/lib/citiesData";
-import { saveFacialEnrollment } from "@/lib/facialEnrollment";
-import { FacialEnrollment } from "@/components/onboarding/FacialEnrollment";
+} from "../lib/api";
+import { buildE164, detectDefaultDial, DIAL_COUNTRIES, countryByDial } from "../lib/phoneCountries";
+import { detectCountryIso } from "../lib/officialLanguages";
+import { citiesForCountry, searchCities } from "../lib/citiesData";
+import { saveFacialEnrollment } from "../lib/facialEnrollment";
+import { FacialEnrollment } from "../components/onboarding/FacialEnrollment";
 import {
   countryFromDemonym,
   demonymForCountry,
   demonymOptions,
   ethnicitiesForOrigin,
   languageSuggestionsForOrigin,
-} from "@/lib/culturalData";
+} from "../lib/culturalData";
 import {
   AlertDialog,
   AlertDialogContent,
@@ -55,7 +55,7 @@ import {
   AlertDialogTitle,
   AlertDialogDescription,
   AlertDialogAction,
-} from "@/components/ui/alert-dialog";
+} from "../components/ui/alert-dialog";
 
 type RelativeHit = {
   id: string;

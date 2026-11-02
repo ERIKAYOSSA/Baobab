@@ -13,8 +13,8 @@ import {
   Loader2,
 } from "lucide-react";
 import { toast } from "sonner";
-import { useAuth } from "@/lib/auth/AuthProvider";
-import { ApiError, mapUiRelation, proposeLink, searchPersons, type ApiPerson } from "@/lib/api";
+import { useAuth } from "../lib/auth/AuthProvider";
+import { ApiError, mapUiRelation, proposeLink, searchPersons, type ApiPerson } from "../lib/api";
 
 const MOCK_MEMBERS = [
   { n: "Akosua Owusu", r: "Cousine au 2e degré" },

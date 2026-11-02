@@ -1,13 +1,13 @@
 import { useEffect, useState } from "react";
 import { Settings2, Globe, Loader2 } from "lucide-react";
-import { FamilyTree } from "@/components/tree/FamilyTree";
-import { PersonPanel } from "@/components/tree/PersonPanel";
-import { AddRelativeSheet } from "@/components/tree/AddRelativeSheet";
+import { FamilyTree } from "../components/tree/FamilyTree";
+import { PersonPanel } from "../components/tree/PersonPanel";
+import { AddRelativeSheet } from "../components/tree/AddRelativeSheet";
 import { toast } from "sonner";
-import { SAMPLE_PEOPLE, type Person } from "@/components/tree/types";
-import { useI18n } from "@/lib/i18n/I18nProvider";
-import { useAuth } from "@/lib/auth/AuthProvider";
-import { getFamilyTree, mapFamilyTreeToPeople } from "@/lib/api";
+import { SAMPLE_PEOPLE, type Person } from "../components/tree/types";
+import { useI18n } from "../lib/i18n/I18nProvider";
+import { useAuth } from "../lib/auth/AuthProvider";
+import { getFamilyTree, mapFamilyTreeToPeople } from "../lib/api";
 
 export function TreePage() {
   const [depth, setDepth] = useState(-1);

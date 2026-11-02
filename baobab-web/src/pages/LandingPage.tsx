@@ -1,10 +1,10 @@
 import { Link, useNavigate } from "react-router-dom";
 import { Fingerprint } from "lucide-react";
 import { useMemo, useState } from "react";
-import { BaobabLogo } from "@/components/BaobabLogo";
-import { landingLanguagesLine } from "@/lib/officialLanguages";
-import { useAuth } from "@/lib/auth/AuthProvider";
-import { logout } from "@/lib/api";
+import { BaobabLogo } from "../components/BaobabLogo";
+import { landingLanguagesLine } from "../lib/officialLanguages";
+import { useAuth } from "../lib/auth/AuthProvider";
+import { logout } from "../lib/api";
 
 export function LandingPage() {
   const navigate = useNavigate();

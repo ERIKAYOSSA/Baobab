@@ -2,7 +2,7 @@ import { useMemo } from "react";
 import { Lock, Crown, Star, Award, BadgeCheck, Flower2 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import type { Person } from "./types";
-import { useI18n } from "@/lib/i18n/I18nProvider";
+import { useI18n } from "../../lib/i18n/I18nProvider";
 
 type Props = {
   people: Person[];

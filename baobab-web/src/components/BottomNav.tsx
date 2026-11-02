@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
 import { NavLink, useLocation } from "react-router-dom";
 import { TreePine, Compass, Bell, User } from "lucide-react";
-import { useI18n } from "@/lib/i18n/I18nProvider";
-import { useAuth } from "@/lib/auth/AuthProvider";
-import { getNotifications } from "@/lib/api";
+import { useI18n } from "../lib/i18n/I18nProvider";
+import { useAuth } from "../lib/auth/AuthProvider";
+import { getNotifications } from "../lib/api";
 
 type Tab = {
   to: "/tree" | "/discover" | "/notifications" | "/me";

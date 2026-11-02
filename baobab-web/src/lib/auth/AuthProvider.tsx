@@ -7,8 +7,8 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { getMe, type ApiPerson } from "@/lib/api";
-import { PERSON_KEY, REFRESH_TOKEN_KEY, TOKEN_KEY, USE_MOCKS } from "@/lib/api/config";
+import { getMe, type ApiPerson } from "../../lib/api";
+import { PERSON_KEY, REFRESH_TOKEN_KEY, TOKEN_KEY, USE_MOCKS } from "../../lib/api/config";
 
 type AuthContextValue = {
   token: string | null;

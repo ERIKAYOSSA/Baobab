@@ -9,7 +9,7 @@ import {
   proposeLink,
   type ApiPerson,
   type UserRelationshipType,
-} from "@/lib/api";
+} from "../../lib/api";
 import type { Person } from "./types";
 
 type Kind = "child_minor" | "child_deceased" | "parent_deceased" | "grandparent_deceased";

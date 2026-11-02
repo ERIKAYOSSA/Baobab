@@ -19,8 +19,8 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
-import { useI18n } from "@/lib/i18n/I18nProvider";
-import { LOCALES, LOCALE_LABELS, type Locale } from "@/lib/i18n/translations";
+import { useI18n } from "../lib/i18n/I18nProvider";
+import { LOCALES, LOCALE_LABELS, type Locale } from "../lib/i18n/translations";
 import {
   createInvite,
   revokeInvite,
@@ -29,11 +29,11 @@ import {
   useTesterSession,
   endTesterSession,
   formatRemaining,
-} from "@/lib/testerAccess";
-import { SAMPLE_PEOPLE } from "@/components/tree/types";
-import { useAuth } from "@/lib/auth/AuthProvider";
-import { updatePerson, setPin, changePin, logout, type MaritalStatus, type SocialTitle } from "@/lib/api";
-import { compressImageToDataUrl } from "@/lib/compressImage";
+} from "../lib/testerAccess";
+import { SAMPLE_PEOPLE } from "../components/tree/types";
+import { useAuth } from "../lib/auth/AuthProvider";
+import { updatePerson, setPin, changePin, logout, type MaritalStatus, type SocialTitle } from "../lib/api";
+import { compressImageToDataUrl } from "../lib/compressImage";
 
 const MARITAL_OPTIONS: { value: MaritalStatus; label: string }[] = [
   { value: "single", label: "Célibataire" },

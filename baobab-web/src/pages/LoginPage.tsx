@@ -2,10 +2,10 @@ import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { ChevronDown, ChevronLeft, ChevronRight, Loader2, LogIn } from "lucide-react";
 import { toast } from "sonner";
-import { BaobabLogo } from "@/components/BaobabLogo";
-import { useAuth } from "@/lib/auth/AuthProvider";
-import { ApiError, sendOtp, verifyOtp } from "@/lib/api";
-import { buildE164, countryByDial, detectDefaultDial, DIAL_COUNTRIES } from "@/lib/phoneCountries";
+import { BaobabLogo } from "../components/BaobabLogo";
+import { useAuth } from "../lib/auth/AuthProvider";
+import { ApiError, sendOtp, verifyOtp } from "../lib/api";
+import { buildE164, countryByDial, detectDefaultDial, DIAL_COUNTRIES } from "../lib/phoneCountries";
 
 export function LoginPage() {
   const navigate = useNavigate();
