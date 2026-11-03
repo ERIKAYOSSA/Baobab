@@ -6,6 +6,7 @@ import { landingLanguagesLine } from "../lib/officialLanguages";
 import { useAuth } from "../lib/auth/AuthProvider";
 import { logout } from "../lib/api";
 
+import { tr } from "../lib/i18n/I18nProvider";
 export function LandingPage() {
   const navigate = useNavigate();
   const { isAuthenticated, person, useMocks, clearSession } = useAuth();
@@ -46,13 +47,10 @@ export function LandingPage() {
           <div className="mb-5 flex h-[7.5rem] w-[7.5rem] items-center justify-center overflow-hidden rounded-full bg-[#f3ebe0] ring-1 ring-border">
             <BaobabLogo size={120} />
           </div>
-          <h1 className="font-display text-[3rem] font-normal leading-none tracking-tight text-foreground">
-            Baobab
+          <h1 className="font-display text-[3rem] font-normal leading-none tracking-tight text-foreground">{tr("Baobab")}
           </h1>
-          <p className="mt-3 text-[15px] leading-snug text-muted-foreground">
-            Ton arbre. Ta famille.
-            <br />
-            Ton héritage.
+          <p className="mt-3 text-[15px] leading-snug text-muted-foreground">{tr("Ton arbre. Ta famille.")}
+            <br />{tr("Ton héritage.")}
           </p>
 
           <div className="mt-9 grid w-full grid-cols-3 gap-2.5">
@@ -78,15 +76,13 @@ export function LandingPage() {
               <Link
                 to="/tree"
                 className="flex h-14 w-full items-center justify-center rounded-[22px] bg-primary text-[15px] font-semibold text-primary-foreground shadow-[0_8px_24px_-8px_rgba(41,90,44,0.45)] active:scale-[0.98]"
-              >
-                Continuer vers mon arbre{person?.firstName ? ` · ${person.firstName}` : ""}
+              >{tr("Continuer vers mon arbre")}{person?.firstName ? ` · ${person.firstName}` : ""}
               </Link>
               <button
                 type="button"
                 onClick={handleLogout}
                 className="flex h-12 w-full items-center justify-center rounded-[22px] border border-border bg-card text-[15px] font-medium text-foreground active:scale-[0.98]"
-              >
-                Se déconnecter
+              >{tr("Se déconnecter")}
               </button>
             </>
           ) : (
@@ -95,7 +91,7 @@ export function LandingPage() {
             type="button"
             onClick={handleStart}
             disabled={planting}
-            aria-label="Commencer — planter mon arbre"
+            aria-label={tr("Commencer — planter mon arbre")}
             className="relative flex h-14 w-full items-center justify-center gap-2.5 overflow-hidden rounded-[22px] bg-primary text-primary-foreground shadow-[0_8px_24px_-8px_rgba(41,90,44,0.45)] transition active:scale-[0.98]"
           >
             <span className="relative flex h-5 w-5 items-center justify-center">
@@ -123,19 +119,17 @@ export function LandingPage() {
                 </svg>
               )}
             </span>
-            <span className="text-[15px] font-semibold">{planting ? "On plante…" : "Commencer"}</span>
+            <span className="text-[15px] font-semibold">{planting ? tr("On plante…") : tr("Commencer")}</span>
           </button>
           <Link
             to="/login"
             className="flex h-12 items-center justify-center rounded-[22px] border border-primary/30 bg-card text-[15px] font-semibold text-primary active:scale-[0.98]"
-          >
-            J'ai déjà un compte · Me connecter
+          >{tr("J'ai déjà un compte · Me connecter")}
           </Link>
           <Link
             to="/tree"
             className="flex h-12 items-center justify-center rounded-[22px] border border-border bg-card text-[15px] font-medium text-foreground active:scale-[0.98]"
-          >
-            Voir la démo
+          >{tr("Voir la démo")}
           </Link>
             </>
           )}

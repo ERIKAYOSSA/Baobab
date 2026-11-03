@@ -91,6 +91,115 @@ personsRouter.get("/search", async (req, res) => {
   }
 });
 
+const normText = (v: unknown): string => (typeof v === "string" ? v.trim().toLowerCase() : "");
+
+/** Points communs entre deux personnes (codes lus par la page Découvrir). */
+function discoveryMatch(
+  me: Record<string, unknown>,
+  other: Record<string, unknown>
+): { score: number; reasons: string[] } {
+  const same = (a: unknown, b: unknown) => normText(a) !== "" && normText(a) === normText(b);
+  let score = 0;
+  const reasons: string[] = [];
+  if (same(me.lastName, other.lastName)) {
+    score += 3;
+    reasons.push("same_last_name");
+  }
+  if (
+    same(me.birthCity, other.birthCity) ||
+    same(me.village, other.village) ||
+    same(me.birthCity, other.village) ||
+    same(me.village, other.birthCity)
+  ) {
+    score += 2;
+    reasons.push("same_locality");
+  }
+  if (same(me.birthCountry, other.birthCountry)) {
+    score += 1;
+    reasons.push("same_country");
+  }
+  if (same(me.ethnicity, other.ethnicity)) {
+    score += 2;
+    reasons.push("same_ethnicity");
+  }
+  if (same(me.clan, other.clan)) {
+    score += 1;
+    reasons.push("same_clan");
+  }
+  return { score, reasons };
+}
+
+/**
+ * Suggestions automatiques : membres actifs qui ont activé « Apparaître dans les suggestions »
+ * (activé par défaut), pas encore reliés à moi. Si j'ai activé « Détecter mes liens potentiels »,
+ * les plus proches (nom, localité, ethnie…) sont aussi renvoyés dans potentialLinks.
+ * Aucune donnée sensible (téléphone…) n'est renvoyée.
+ */
+personsRouter.get("/discover", requireAuth, async (req: AuthenticatedRequest, res) => {
+  const meId = req.auth!.personId;
+  const session = getDriver().session();
+  try {
+    const result = await session.run(
+      `
+      MATCH (m:Person {id: $meId})
+      OPTIONAL MATCH (p:Person)
+      WHERE p.id <> $meId
+        AND p.phone IS NOT NULL
+        AND coalesce(p.accountStatus, "active") = "active"
+        AND coalesce(p.vitalStatus, "alive") <> "deceased"
+        AND coalesce(p.appearInSuggestions, true) = true
+        AND NOT EXISTS { MATCH (m)-[]-(p) }
+      WITH m, p
+      ORDER BY p.createdAt DESC
+      LIMIT 200
+      RETURN m, collect(p) AS candidates
+      `,
+      { meId }
+    );
+
+    const record = result.records[0];
+    if (!record) {
+      return res.status(404).json({ ok: false, message: "Person not found" });
+    }
+    const me = record.get("m").properties as Record<string, unknown>;
+    const candidates = (record.get("candidates") as Array<{ properties: Record<string, unknown> } | null>)
+      .filter((n): n is { properties: Record<string, unknown> } => Boolean(n));
+
+    const items = candidates
+      .map((n) => {
+        const p = n.properties;
+        const { score, reasons } = discoveryMatch(me, p);
+        return {
+          id: p.id,
+          firstName: p.firstName,
+          lastName: p.lastName,
+          village: p.village ?? null,
+          birthCity: p.birthCity ?? null,
+          birthCountry: p.birthCountry ?? null,
+          ethnicity: p.ethnicity ?? null,
+          photoUrl: p.photoUrl ?? null,
+          score,
+          reasons
+        };
+      })
+      .sort((a, b) => b.score - a.score);
+
+    const detectLinks = me.detectLinks !== false;
+    const potentialLinks = detectLinks ? items.filter((i) => i.score >= 2).slice(0, 10) : [];
+    const suggestions = items.slice(0, 30);
+
+    res.json({ ok: true, data: { suggestions, potentialLinks, detectLinks } });
+  } catch (error) {
+    res.status(500).json({
+      ok: false,
+      message: "Failed to load discovery suggestions",
+      error: error instanceof Error ? error.message : "Unknown error"
+    });
+  } finally {
+    await session.close();
+  }
+});
+
 personsRouter.use("/:personId/consanguinity", consanguinityRouter);
 
 personsRouter.get("/", async (_req, res) => {

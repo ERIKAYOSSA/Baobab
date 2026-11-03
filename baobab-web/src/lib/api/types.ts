@@ -34,6 +34,10 @@ export type ApiPerson = {
   birthCountry?: string | null;
   birthCity?: string | null;
   birthQuarter?: string | null;
+  /** Préférences de découverte (absent = activé, sauf receiveInvites). */
+  appearInSuggestions?: boolean | null;
+  detectLinks?: boolean | null;
+  receiveInvites?: boolean | null;
 };
 
 export type PersonProfileUpdate = Partial<
@@ -65,6 +69,9 @@ export type PersonProfileUpdate = Partial<
     | "birthCountry"
     | "birthCity"
     | "birthQuarter"
+    | "appearInSuggestions"
+    | "detectLinks"
+    | "receiveInvites"
   >
 >;
 
@@ -152,3 +159,23 @@ export type UserRelationshipType =
   | "SIBLING_OF";
 
 export type ProposeDirection = "parent_of_requester" | "requester_is_parent" | "peer";
+
+export type DiscoverItem = {
+  id: string;
+  firstName: string;
+  lastName: string;
+  village: string | null;
+  birthCity: string | null;
+  birthCountry: string | null;
+  ethnicity: string | null;
+  photoUrl: string | null;
+  score: number;
+  /** same_last_name | same_locality | same_country | same_ethnicity | same_clan */
+  reasons: string[];
+};
+
+export type DiscoverResult = {
+  suggestions: DiscoverItem[];
+  potentialLinks: DiscoverItem[];
+  detectLinks: boolean;
+};

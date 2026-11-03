@@ -17,6 +17,7 @@ import {
 import type { LucideIcon } from "lucide-react";
 import { MARITAL_LABELS, TITLE_LABELS, type Person } from "./types";
 
+import { tr } from "../../lib/i18n/I18nProvider";
 type Props = {
   person: Person;
   onClose: () => void;
@@ -56,25 +57,25 @@ export function PersonPanel({ person, onClose, onEnrich, onLegacy, onAdd }: Prop
         : "ring-vital-unknown";
 
   const rows: { icon: LucideIcon; label: string; value?: string }[] = [
-    { icon: Tag, label: "Surnom", value: person.nickname },
-    { icon: Award, label: "Titres honorifiques", value: person.honorifics?.join(" · ") },
+    { icon: Tag, label: tr("Surnom"), value: person.nickname },
+    { icon: Award, label: tr("Titres honorifiques"), value: person.honorifics?.join(" · ") },
     {
       icon: Crown,
-      label: "Statut social",
+      label: tr("Statut social"),
       value: [person.headOfFamily ? "Chef de famille" : null, person.title ? TITLE_LABELS[person.title] : null]
         .filter(Boolean)
         .join(" · "),
     },
-    { icon: Calendar, label: "Naissance", value: born },
-    { icon: Flower2, label: "Décès", value: died },
+    { icon: Calendar, label: tr("Naissance"), value: born },
+    { icon: Flower2, label: tr("Décès"), value: died },
     {
       icon: Heart,
-      label: "Statut marital",
+      label: tr("Statut marital"),
       value: person.maritalStatus ? MARITAL_LABELS[person.maritalStatus] : undefined,
     },
-    { icon: Home, label: "Lieu d'habitation", value: person.residence },
-    { icon: Landmark, label: "Sépulture", value: person.burialPlace },
-    { icon: Sparkles, label: "Ethnie", value: person.ethnicity },
+    { icon: Home, label: tr("Lieu d'habitation"), value: person.residence },
+    { icon: Landmark, label: tr("Sépulture"), value: person.burialPlace },
+    { icon: Sparkles, label: tr("Ethnie"), value: person.ethnicity },
   ].filter((r) => Boolean(r.value));
 
   return (
@@ -103,7 +104,7 @@ export function PersonPanel({ person, onClose, onEnrich, onLegacy, onAdd }: Prop
               </div>
               <button
                 onClick={onClose}
-                aria-label="Fermer la fiche"
+                aria-label={tr("Fermer la fiche")}
                 className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-muted text-muted-foreground"
               >
                 <X className="h-3.5 w-3.5" />
@@ -111,15 +112,13 @@ export function PersonPanel({ person, onClose, onEnrich, onLegacy, onAdd }: Prop
             </div>
             <div className="mt-1.5 flex flex-wrap gap-1.5">
               {person.verified ? (
-                <Pill tone="primary" icon={BadgeCheck}>
-                  Vérifié
+                <Pill tone="primary" icon={BadgeCheck}>{tr("Vérifié")}
                 </Pill>
               ) : (
-                <Pill tone="muted">Non vérifié</Pill>
+                <Pill tone="muted">{tr("Non vérifié")}</Pill>
               )}
               {person.headOfFamily && (
-                <Pill tone="gold" icon={Crown}>
-                  Chef de famille
+                <Pill tone="gold" icon={Crown}>{tr("Chef de famille")}
                 </Pill>
               )}
               {person.title && <Pill tone="accent">{TITLE_LABELS[person.title]}</Pill>}
@@ -129,8 +128,7 @@ export function PersonPanel({ person, onClose, onEnrich, onLegacy, onAdd }: Prop
 
         <dl className="mt-3 divide-y divide-border border-t border-border">
           {rows.length === 0 && (
-            <p className="px-4 py-3 text-xs text-muted-foreground">
-              Aucune information détaillée pour l'instant. Enrichis cette fiche pour renforcer les liens familiaux.
+            <p className="px-4 py-3 text-xs text-muted-foreground">{tr("Aucune information détaillée pour l'instant. Enrichis cette fiche pour renforcer les liens familiaux.")}
             </p>
           )}
           {rows.map((row) => (
@@ -145,11 +143,11 @@ export function PersonPanel({ person, onClose, onEnrich, onLegacy, onAdd }: Prop
         </dl>
 
         <div className="sticky bottom-0 flex items-center gap-2 border-t border-border bg-card px-4 py-3">
-          <ActionBtn icon={Sprout} label="Enrichir mon arbre" onClick={onEnrich} />
-          <ActionBtn icon={Scroll} label="Mon héritage" onClick={onLegacy} />
+          <ActionBtn icon={Sprout} label={tr("Enrichir mon arbre")} onClick={onEnrich} />
+          <ActionBtn icon={Scroll} label={tr("Mon héritage")} onClick={onLegacy} />
           <button
             onClick={onAdd}
-            aria-label="Ajouter un proche"
+            aria-label={tr("Ajouter un proche")}
             className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-sm"
           >
             <Plus className="h-4 w-4" />

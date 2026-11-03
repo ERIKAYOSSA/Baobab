@@ -6,3 +6,4 @@ export * from "./personsApi";
 export * from "./notificationsApi";
 export * from "./relationshipRequestsApi";
 export * from "./mapFamilyTree";
+export * from "./discover";

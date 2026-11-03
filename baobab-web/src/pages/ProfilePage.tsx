@@ -19,7 +19,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
-import { useI18n } from "../lib/i18n/I18nProvider";
+import { useI18n, tr } from "../lib/i18n/I18nProvider";
 import { LOCALES, LOCALE_LABELS, type Locale } from "../lib/i18n/translations";
 import {
   createInvite,
@@ -140,11 +140,11 @@ export function ProfilePage() {
 
   const onPickPhoto = async (file: File | null) => {
     if (!file || !person) {
-      if (!person) toast.message("Connecte-toi pour enregistrer ta photo de profil");
+      if (!person) toast.message(tr("Connecte-toi pour enregistrer ta photo de profil"));
       return;
     }
     if (!file.type.startsWith("image/")) {
-      toast.error("Choisis une image");
+      toast.error(tr("Choisis une image"));
       return;
     }
     setPhotoBusy(true);
@@ -152,13 +152,13 @@ export function ProfilePage() {
       const dataUrl = await compressImageToDataUrl(file);
       if (useMocks) {
         updateLocalPerson({ ...person, photoUrl: dataUrl });
-        toast.success("Photo mise à jour (mode démo)");
+        toast.success(tr("Photo mise à jour (mode démo)"));
         return;
       }
       const res = await updatePerson(person.id, { photoUrl: dataUrl });
       updateLocalPerson(res.data);
-      toast.success("Photo de profil enregistrée", {
-        description: "Elle s’affiche maintenant dans Mon Arbre.",
+      toast.success(tr("Photo de profil enregistrée"), {
+        description: tr("Elle s’affiche maintenant dans Mon Arbre."),
       });
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Impossible d’enregistrer la photo");
@@ -170,7 +170,7 @@ export function ProfilePage() {
 
   const onSaveProfile = async () => {
     if (!person) {
-      toast.message("Connecte-toi pour enregistrer ton profil");
+      toast.message(tr("Connecte-toi pour enregistrer ton profil"));
       return;
     }
     const payload = {
@@ -198,12 +198,12 @@ export function ProfilePage() {
     try {
       if (useMocks) {
         updateLocalPerson({ ...person, ...payload });
-        toast.success("Profil mis à jour (mode démo)");
+        toast.success(tr("Profil mis à jour (mode démo)"));
         return;
       }
       const res = await updatePerson(person.id, payload);
       updateLocalPerson(res.data);
-      toast.success("Profil enregistré");
+      toast.success(tr("Profil enregistré"));
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Impossible d’enregistrer le profil");
     } finally {
@@ -238,7 +238,7 @@ export function ProfilePage() {
             />
             <button
               type="button"
-              aria-label="Changer la photo"
+              aria-label={tr("Changer la photo")}
               disabled={photoBusy}
               onClick={() => photoInputRef.current?.click()}
               className="absolute -bottom-1 right-0 flex h-8 w-8 items-center justify-center rounded-full bg-accent text-accent-foreground ring-2 ring-background disabled:opacity-60"
@@ -254,8 +254,7 @@ export function ProfilePage() {
             {person?.phone ? `${person.phone} · ` : ""}
             {meta}
           </p>
-          <p className="mt-1 max-w-xs text-[11px] text-muted-foreground">
-            La photo de profil se règle ici et s’affiche dans Mon Arbre (distincte de l’enrôlement facial).
+          <p className="mt-1 max-w-xs text-[11px] text-muted-foreground">{tr("La photo de profil se règle ici et s’affiche dans Mon Arbre (distincte de l’enrôlement facial).")}
           </p>
           {isAuthenticated && (
             <button
@@ -266,12 +265,11 @@ export function ProfilePage() {
                   /* ignore */
                 }
                 clearSession();
-                toast.success("Déconnecté");
+                toast.success(tr("Déconnecté"));
                 navigate("/onboarding");
               }}
               className="mt-3 rounded-full border border-border bg-card px-4 py-1.5 text-xs font-medium text-muted-foreground"
-            >
-              Se déconnecter
+            >{tr("Se déconnecter")}
             </button>
           )}
         </div>
@@ -281,12 +279,12 @@ export function ProfilePage() {
         <section className="mx-3 -mt-2 rounded-3xl border border-border bg-card p-4 shadow-sm">
           <div className="mb-2 flex items-center gap-2">
             <Lock className="h-4 w-4 text-primary" />
-            <h2 className="font-display text-base">Sécurité — PIN</h2>
+            <h2 className="font-display text-base">{tr("Sécurité — PIN")}</h2>
           </div>
           <p className="mb-3 text-[11px] text-muted-foreground">
             {hasPin
-              ? "Change ton PIN pour protéger la reconnexion après le code SMS."
-              : "Définis un PIN (4 chiffres min.) demandé après le SMS si ton compte existe déjà."}
+              ? tr("Change ton PIN pour protéger la reconnexion après le code SMS.")
+              : tr("Définis un PIN (4 chiffres min.) demandé après le SMS si ton compte existe déjà.")}
           </p>
           {hasPin && (
             <input
@@ -294,7 +292,7 @@ export function ProfilePage() {
               inputMode="numeric"
               value={currentPin}
               onChange={(e) => setCurrentPin(e.target.value.replace(/\D/g, "").slice(0, 8))}
-              placeholder="PIN actuel"
+              placeholder={tr("PIN actuel")}
               className="mb-2 h-10 w-full rounded-xl border border-border bg-background px-3 text-sm outline-none focus:border-primary"
             />
           )}
@@ -311,7 +309,7 @@ export function ProfilePage() {
             inputMode="numeric"
             value={confirmPin}
             onChange={(e) => setConfirmPin(e.target.value.replace(/\D/g, "").slice(0, 8))}
-            placeholder="Confirmer le PIN"
+            placeholder={tr("Confirmer le PIN")}
             className="mb-3 h-10 w-full rounded-xl border border-border bg-background px-3 text-sm outline-none focus:border-primary"
           />
           <button
@@ -319,24 +317,24 @@ export function ProfilePage() {
             disabled={pinBusy || newPin.length < 4 || newPin !== confirmPin || (hasPin && currentPin.length < 4)}
             onClick={async () => {
               if (!person || useMocks) {
-                toast.message(useMocks ? "Mode démo" : "Connecte-toi d’abord");
+                toast.message(useMocks ? tr("Mode démo") : tr("Connecte-toi d’abord"));
                 return;
               }
               setPinBusy(true);
               try {
                 if (hasPin) {
                   await changePin(currentPin, newPin);
-                  toast.success("PIN mis à jour");
+                  toast.success(tr("PIN mis à jour"));
                 } else {
                   const res = await setPin(newPin);
                   setSession(res.data.token, { ...res.data.person, hasPin: true }, res.data.refreshToken);
-                  toast.success("PIN configuré");
+                  toast.success(tr("PIN configuré"));
                 }
                 setNewPin("");
                 setConfirmPin("");
                 setCurrentPin("");
               } catch (e) {
-                toast.error(e instanceof Error ? e.message : "Échec PIN");
+                toast.error(e instanceof Error ? e.message : tr("Échec PIN"));
               } finally {
                 setPinBusy(false);
               }
@@ -344,7 +342,7 @@ export function ProfilePage() {
             className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground disabled:opacity-50"
           >
             {pinBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Lock className="h-4 w-4" />}
-            {hasPin ? "Changer le PIN" : "Enregistrer le PIN"}
+            {hasPin ? tr("Changer le PIN") : tr("Enregistrer le PIN")}
           </button>
         </section>
       )}
@@ -353,7 +351,7 @@ export function ProfilePage() {
         <div className="mb-3 flex items-center justify-between gap-2">
           <div className="flex items-center gap-2">
             <Crown className="h-4 w-4 text-accent" />
-            <h2 className="font-display text-base">Identité & titres</h2>
+            <h2 className="font-display text-base">{tr("Identité & titres")}</h2>
           </div>
           <button
             type="button"
@@ -361,22 +359,20 @@ export function ProfilePage() {
             disabled={saving}
             className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground disabled:opacity-60"
           >
-            {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
-            Enregistrer
+            {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}{tr("Enregistrer")}
           </button>
         </div>
         <div className="space-y-3">
-          <Field label="Surnom" value={form.nickname} onChange={(v) => setField("nickname", v)} />
+          <Field label={tr("Surnom")} value={form.nickname} onChange={(v) => setField("nickname", v)} />
           <Field
-            label="Titres honorifiques"
-            hint="Séparés par des virgules"
+            label={tr("Titres honorifiques")}
+            hint={tr("Séparés par des virgules")}
             value={form.honorifics}
             onChange={(v) => setField("honorifics", v)}
-            placeholder="Nana, Chef de canton…"
+            placeholder={tr("Nana, Chef de canton…")}
           />
           <div>
-            <label className="mb-1 block text-[11px] uppercase tracking-wider text-muted-foreground">
-              Statut social
+            <label className="mb-1 block text-[11px] uppercase tracking-wider text-muted-foreground">{tr("Statut social")}
             </label>
             <select
               value={form.socialTitle}
@@ -385,13 +381,13 @@ export function ProfilePage() {
             >
               {TITLE_OPTIONS.map((o) => (
                 <option key={o.value || "none"} value={o.value}>
-                  {o.label}
+                  {tr(o.label)}
                 </option>
               ))}
             </select>
           </div>
           <label className="flex items-center justify-between gap-3 rounded-xl border border-border px-3 py-2.5">
-            <span className="text-sm text-foreground">Chef de famille</span>
+            <span className="text-sm text-foreground">{tr("Chef de famille")}</span>
             <input
               type="checkbox"
               checked={form.headOfFamily}
@@ -400,8 +396,7 @@ export function ProfilePage() {
             />
           </label>
           <div>
-            <label className="mb-1 block text-[11px] uppercase tracking-wider text-muted-foreground">
-              Statut marital
+            <label className="mb-1 block text-[11px] uppercase tracking-wider text-muted-foreground">{tr("Statut marital")}
             </label>
             <select
               value={form.maritalStatus}
@@ -410,20 +405,20 @@ export function ProfilePage() {
             >
               {MARITAL_OPTIONS.map((o) => (
                 <option key={o.value} value={o.value}>
-                  {o.label}
+                  {tr(o.label)}
                 </option>
               ))}
             </select>
           </div>
           <Field
-            label="Lieu d'habitation"
+            label={tr("Lieu d'habitation")}
             value={form.residence}
             onChange={(v) => setField("residence", v)}
-            placeholder="Ville, pays"
+            placeholder={tr("Ville, pays")}
           />
           <Field
-            label="Sépulture"
-            hint="Si décédé(e)"
+            label={tr("Sépulture")}
+            hint={tr("Si décédé(e)")}
             value={form.burialPlace}
             onChange={(v) => setField("burialPlace", v)}
           />
@@ -436,7 +431,7 @@ export function ProfilePage() {
           <h2 className="font-display text-base">{t("me.language")}</h2>
         </div>
         <div className="grid grid-cols-3 gap-2">
-          {LOCALES.map((l) => (
+          {LOCALES.filter((l) => l !== "sw").map((l) => (
             <button
               key={l}
               onClick={() => setLocale(l)}
@@ -454,36 +449,33 @@ export function ProfilePage() {
 
       <section className="mx-3 mt-3 rounded-3xl border border-border bg-card p-4">
         <h2 className="mb-2 font-display text-base">{t("me.culturalData")}</h2>
-        <p className="mb-3 text-[11px] text-muted-foreground">
-          Ces informations enrichissent ta fiche et aident au rapprochement familial. Elles apparaissent dans Mon
-          Arbre quand elles sont renseignées.
+        <p className="mb-3 text-[11px] text-muted-foreground">{tr("Ces informations enrichissent ta fiche et aident au rapprochement familial. Elles apparaissent dans Mon Arbre quand elles sont renseignées.")}
         </p>
         <div className="space-y-3">
           <div className="grid grid-cols-2 gap-2">
-            <Field label="Pays de naissance" value={form.birthCountry} onChange={(v) => setField("birthCountry", v)} />
-            <Field label="Ville" value={form.birthCity} onChange={(v) => setField("birthCity", v)} />
+            <Field label={tr("Pays de naissance")} value={form.birthCountry} onChange={(v) => setField("birthCountry", v)} />
+            <Field label={tr("Ville")} value={form.birthCity} onChange={(v) => setField("birthCity", v)} />
           </div>
-          <Field label="Quartier" value={form.birthQuarter} onChange={(v) => setField("birthQuarter", v)} />
-          <Field label="Ethnie" value={form.ethnicity} onChange={(v) => setField("ethnicity", v)} />
-          <Field label="Clan" value={form.clan} onChange={(v) => setField("clan", v)} />
-          <Field label="Totem" value={form.totem} onChange={(v) => setField("totem", v)} />
+          <Field label={tr("Quartier")} value={form.birthQuarter} onChange={(v) => setField("birthQuarter", v)} />
+          <Field label={tr("Ethnie")} value={form.ethnicity} onChange={(v) => setField("ethnicity", v)} />
+          <Field label={tr("Clan")} value={form.clan} onChange={(v) => setField("clan", v)} />
+          <Field label={tr("Totem")} value={form.totem} onChange={(v) => setField("totem", v)} />
           <Field
-            label="Nationalités"
-            hint="Séparées par des virgules"
+            label={tr("Nationalités")}
+            hint={tr("Séparées par des virgules")}
             value={form.nationalities}
             onChange={(v) => setField("nationalities", v)}
           />
           <Field
-            label="Langues"
-            hint="Séparées par des virgules"
+            label={tr("Langues")}
+            hint={tr("Séparées par des virgules")}
             value={form.languages}
             onChange={(v) => setField("languages", v)}
           />
-          <Field label="Religion" value={form.religion} onChange={(v) => setField("religion", v)} />
-          <Field label="Initiations" value={form.initiations} onChange={(v) => setField("initiations", v)} />
+          <Field label={tr("Religion")} value={form.religion} onChange={(v) => setField("religion", v)} />
+          <Field label={tr("Initiations")} value={form.initiations} onChange={(v) => setField("initiations", v)} />
           <div>
-            <label className="mb-1 block text-[11px] uppercase tracking-wider text-muted-foreground">
-              Histoire orale
+            <label className="mb-1 block text-[11px] uppercase tracking-wider text-muted-foreground">{tr("Histoire orale")}
             </label>
             <textarea
               value={form.oralHistory}
@@ -498,17 +490,16 @@ export function ProfilePage() {
             disabled={saving}
             className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-4 py-3 text-sm font-semibold text-primary-foreground disabled:opacity-60"
           >
-            {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-            Enregistrer le profil
+            {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}{tr("Enregistrer le profil")}
           </button>
         </div>
       </section>
 
       <section className="mx-3 mt-3 rounded-3xl border border-border bg-card p-4">
         <h2 className="mb-3 font-display text-base">{t("me.discoveryPrefs")}</h2>
-        <Toggle label={t<string>("me.appearInSuggestions")} defaultOn />
-        <Toggle label={t<string>("me.detectLinks")} defaultOn />
-        <Toggle label={t<string>("me.receiveInvites")} />
+        <PrefToggle label={t<string>("me.appearInSuggestions")} field="appearInSuggestions" defaultOn />
+        <PrefToggle label={t<string>("me.detectLinks")} field="detectLinks" defaultOn />
+        <PrefToggle label={t<string>("me.receiveInvites")} field="receiveInvites" defaultOn={false} />
       </section>
 
       <TesterInvitesSection />
@@ -566,7 +557,7 @@ function ExportSection() {
 
   const runExport = () => {
     const sideLabel =
-      side === "paternelle" ? "Lignée paternelle" : side === "maternelle" ? "Lignée maternelle" : "Les deux lignées";
+      side === "paternelle" ? tr("Lignée paternelle") : side === "maternelle" ? tr("Lignée maternelle") : tr("Les deux lignées");
     const rows = SAMPLE_PEOPLE.filter((p) => {
       if (!includeDeceased && (p.status === "deceased" || p.death)) return false;
       return true;
@@ -583,15 +574,15 @@ th { color: #6f5947; font-weight: 600; text-transform: uppercase; font-size: 10p
 .photo { width: 28px; height: 28px; border: 1px dashed #e1d6c6; border-radius: 50%; }
 </style></head><body>
 <h1>${escapeHtml(title)}</h1>
-<p class="meta">${sideLabel} · N ± ${generations}${includeSpouses ? " · conjoints" : ""}${includeDeceased ? " · décédés" : ""}</p>
+<p class="meta">${sideLabel} · N ± ${generations}${includeSpouses ? tr(" · conjoints") : ""}${includeDeceased ? tr(" · décédés") : ""}</p>
 <table><thead><tr>
 ${includePhotos ? "<th></th>" : ""}
-<th>Nom</th><th>Années</th><th>Statut</th><th>Vérifié</th>
+<th>${tr("Nom")}</th><th>${tr("Années")}</th><th>${tr("Statut")}</th><th>${tr("Vérifié")}</th>
 </tr></thead><tbody>
 ${rows
   .map((p) => {
     const years = `${p.birth ?? "?"}${p.death ? ` – ${p.death}` : ""}`;
-    const status = p.status === "deceased" ? "Décédé·e" : p.status === "alive" ? "Vivant·e" : "—";
+    const status = p.status === "deceased" ? tr("Décédé·e") : p.status === "alive" ? tr("Vivant·e") : "—";
     return `<tr>${includePhotos ? '<td><div class="photo"></div></td>' : ""}<td><strong>${escapeHtml(p.name)}</strong></td><td>${years}</td><td>${status}</td><td>${p.verified ? "✓" : ""}</td></tr>`;
   })
   .join("")}
@@ -600,14 +591,14 @@ ${rows
     if (output === "pdf") {
       const win = window.open("", "_blank");
       if (!win) {
-        toast.error("Autorise les pop-ups pour imprimer");
+        toast.error(tr("Autorise les pop-ups pour imprimer"));
         return;
       }
       win.document.write(html);
       win.document.close();
       win.focus();
       setTimeout(() => win.print(), 300);
-      toast.success("Document prêt à imprimer");
+      toast.success(tr("Document prêt à imprimer"));
     } else {
       const blob = new Blob([html], { type: "text/html" });
       const url = URL.createObjectURL(blob);
@@ -616,8 +607,8 @@ ${rows
       a.download = `${title.replace(/\s+/g, "_")}.${output === "jpeg" ? "html" : "html"}`;
       a.click();
       URL.revokeObjectURL(url);
-      toast.success(`Fichier ${output.toUpperCase()} généré`, {
-        description: "Aperçu HTML téléchargé (rendu image côté navigateur).",
+      toast.success(tr("Fichier {fmt} généré", { fmt: output.toUpperCase() }), {
+        description: tr("Aperçu HTML téléchargé (rendu image côté navigateur)."),
       });
     }
     setOpen(false);
@@ -627,18 +618,16 @@ ${rows
     <section className="mx-3 mt-3 rounded-3xl border border-border bg-card p-4">
       <div className="mb-2 flex items-center gap-2">
         <Printer className="h-4 w-4 text-primary" />
-        <h2 className="font-display text-base">Imprimer / Exporter</h2>
+        <h2 className="font-display text-base">{tr("Imprimer / Exporter")}</h2>
       </div>
-      <p className="mb-3 text-[11px] text-muted-foreground">
-        Génère un document de ton arbre en PDF, JPEG ou PNG. Choisis la lignée, le nombre de générations et les options
-        avant d'exporter.
+      <p className="mb-3 text-[11px] text-muted-foreground">{tr("Génère un document de ton arbre en PDF, JPEG ou PNG. Choisis la lignée, le nombre de générations et les options avant d'exporter.")}
       </p>
       <button
         type="button"
         onClick={() => setOpen(true)}
         className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-4 py-3 text-sm font-semibold text-primary-foreground active:scale-[0.99]"
       >
-        <Download className="h-4 w-4" /> Configurer et exporter
+        <Download className="h-4 w-4" />{tr("Configurer et exporter")}
       </button>
 
       {open && (
@@ -646,14 +635,13 @@ ${rows
           <div className="max-h-[90dvh] w-full max-w-md overflow-y-auto rounded-3xl border border-border bg-card p-4 shadow-xl">
             <div className="mb-2 flex items-start justify-between gap-2">
               <div>
-                <h3 className="font-display text-lg">Paramètres d'impression</h3>
-                <p className="text-[11px] text-muted-foreground">
-                  Configure la lignée, les options et le format de sortie (PDF, JPEG ou PNG).
+                <h3 className="font-display text-lg">{tr("Paramètres d'impression")}</h3>
+                <p className="text-[11px] text-muted-foreground">{tr("Configure la lignée, les options et le format de sortie (PDF, JPEG ou PNG).")}
                 </p>
               </div>
               <button
                 type="button"
-                aria-label="Close"
+                aria-label={tr("Close")}
                 onClick={() => setOpen(false)}
                 className="flex h-8 w-8 items-center justify-center rounded-full border border-border"
               >
@@ -663,8 +651,7 @@ ${rows
 
             <div className="space-y-4 py-2">
               <div>
-                <label className="mb-1 block text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
-                  Titre du document
+                <label className="mb-1 block text-[11px] font-medium uppercase tracking-wider text-muted-foreground">{tr("Titre du document")}
                 </label>
                 <input
                   value={title}
@@ -674,13 +661,13 @@ ${rows
               </div>
 
               <div>
-                <p className="mb-1.5 text-[11px] font-medium uppercase tracking-wider text-muted-foreground">Lignée</p>
+                <p className="mb-1.5 text-[11px] font-medium uppercase tracking-wider text-muted-foreground">{tr("Lignée")}</p>
                 <div className="grid grid-cols-3 gap-2">
                   {(
                     [
-                      { v: "paternelle", label: "Paternelle" },
-                      { v: "maternelle", label: "Maternelle" },
-                      { v: "both", label: "Les deux" },
+                      { v: "paternelle", label: tr("Paternelle") },
+                      { v: "maternelle", label: tr("Maternelle") },
+                      { v: "both", label: tr("Les deux") },
                     ] as const
                   ).map((d) => (
                     <button
@@ -701,8 +688,8 @@ ${rows
 
               <div>
                 <div className="mb-1.5 flex items-center justify-between">
-                  <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">Générations</p>
-                  <span className="text-xs font-semibold">N ± {generations}</span>
+                  <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">{tr("Générations")}</p>
+                  <span className="text-xs font-semibold">{tr("N ±")}{" "}{generations}</span>
                 </div>
                 <input
                   type="range"
@@ -715,8 +702,7 @@ ${rows
               </div>
 
               <div>
-                <p className="mb-1.5 text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
-                  Format de page
+                <p className="mb-1.5 text-[11px] font-medium uppercase tracking-wider text-muted-foreground">{tr("Format de page")}
                 </p>
                 <div className="grid grid-cols-2 gap-2">
                   {(["A4", "Letter"] as const).map((d) => (
@@ -737,15 +723,14 @@ ${rows
               </div>
 
               <div>
-                <p className="mb-1.5 text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
-                  Format de sortie
+                <p className="mb-1.5 text-[11px] font-medium uppercase tracking-wider text-muted-foreground">{tr("Format de sortie")}
                 </p>
                 <div className="grid grid-cols-3 gap-2">
                   {(
                     [
-                      { v: "pdf", label: "PDF" },
-                      { v: "jpeg", label: "JPEG" },
-                      { v: "png", label: "PNG" },
+                      { v: "pdf", label: tr("PDF") },
+                      { v: "jpeg", label: tr("JPEG") },
+                      { v: "png", label: tr("PNG") },
                     ] as const
                   ).map((d) => (
                     <button
@@ -765,9 +750,9 @@ ${rows
               </div>
 
               <div className="space-y-1">
-                <CheckRow label="Inclure les conjoints" checked={includeSpouses} onChange={setIncludeSpouses} />
-                <CheckRow label="Inclure les personnes décédées" checked={includeDeceased} onChange={setIncludeDeceased} />
-                <CheckRow label="Emplacements pour photos" checked={includePhotos} onChange={setIncludePhotos} />
+                <CheckRow label={tr("Inclure les conjoints")} checked={includeSpouses} onChange={setIncludeSpouses} />
+                <CheckRow label={tr("Inclure les personnes décédées")} checked={includeDeceased} onChange={setIncludeDeceased} />
+                <CheckRow label={tr("Emplacements pour photos")} checked={includePhotos} onChange={setIncludePhotos} />
               </div>
             </div>
 
@@ -776,8 +761,7 @@ ${rows
                 type="button"
                 onClick={() => setOpen(false)}
                 className="rounded-xl border border-border bg-background px-4 py-2 text-sm font-medium"
-              >
-                Annuler
+              >{tr("Annuler")}
               </button>
               <button
                 type="button"
@@ -786,11 +770,11 @@ ${rows
               >
                 {output === "pdf" ? (
                   <>
-                    <Printer className="h-4 w-4" /> Imprimer PDF
+                    <Printer className="h-4 w-4" />{tr("Imprimer PDF")}
                   </>
                 ) : (
                   <>
-                    <Download className="h-4 w-4" /> Télécharger {output.toUpperCase()}
+                    <Download className="h-4 w-4" />{tr("Télécharger")}{" "}{output.toUpperCase()}
                   </>
                 )}
               </button>
@@ -840,8 +824,8 @@ function TesterInvitesSection() {
   const handleCreate = () => {
     const inv = createInvite(label || undefined);
     setLabel("");
-    toast.success("Invitation créée", {
-      description: `Code ${inv.code} · valide 7 jours.`,
+    toast.success(tr("Invitation créée"), {
+      description: tr("Code {code} · valide 7 jours.", { code: inv.code }),
     });
   };
 
@@ -849,18 +833,18 @@ function TesterInvitesSection() {
     const url = inviteLink(code);
     try {
       await navigator.clipboard.writeText(url);
-      toast.success("Lien copié", { description: url });
+      toast.success(tr("Lien copié"), { description: url });
     } catch {
-      toast.error("Impossible de copier");
+      toast.error(tr("Impossible de copier"));
     }
   };
 
   const share = async (code: string) => {
     const url = inviteLink(code);
-    const text = `Tu es invité·e à tester Baobab. Active ton accès ici : ${url}`;
+    const text = tr("Tu es invité·e à tester Baobab. Active ton accès ici : {url}", { url });
     if ("share" in navigator) {
       try {
-        await navigator.share({ title: "Invitation Baobab", text, url });
+        await navigator.share({ title: tr("Invitation Baobab"), text, url });
         return;
       } catch {
         /* cancelled */
@@ -873,32 +857,28 @@ function TesterInvitesSection() {
     <section className="mx-3 mt-3 rounded-3xl border border-border bg-card p-4">
       <div className="mb-3 flex items-center gap-2">
         <UserPlus className="h-4 w-4 text-primary" />
-        <h2 className="font-display text-base">Inviter des testeurs</h2>
+        <h2 className="font-display text-base">{tr("Inviter des testeurs")}</h2>
       </div>
-      <p className="mb-3 text-[11px] text-muted-foreground">
-        Génère un lien à usage limité. Tes testeurs y accèdent sans créer de compte — l'accès expire
-        automatiquement après 7 jours.
+      <p className="mb-3 text-[11px] text-muted-foreground">{tr("Génère un lien à usage limité. Tes testeurs y accèdent sans créer de compte — l'accès expire automatiquement après 7 jours.")}
       </p>
 
       {session && (
         <div className="mb-3 flex items-start gap-2 rounded-xl border border-primary/30 bg-primary/10 p-3 text-[12px]">
           <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
           <div className="flex-1">
-            <p className="font-semibold text-foreground">
-              Tu utilises Baobab en mode testeur ({session.alias})
+            <p className="font-semibold text-foreground">{tr("Tu utilises Baobab en mode testeur (")}{session.alias})
             </p>
             <p className="text-foreground/80">
-              {formatRemaining(session.expiresAt - Date.now())} · code {session.code}
+              {formatRemaining(session.expiresAt - Date.now())}{tr("· code")}{" "}{session.code}
             </p>
           </div>
           <button
             onClick={() => {
               endTesterSession();
-              toast.success("Session testeur terminée");
+              toast.success(tr("Session testeur terminée"));
             }}
             className="rounded-lg border border-border bg-card px-2 py-1 text-[11px]"
-          >
-            Quitter
+          >{tr("Quitter")}
           </button>
         </div>
       )}
@@ -907,20 +887,19 @@ function TesterInvitesSection() {
         <input
           value={label}
           onChange={(e) => setLabel(e.target.value)}
-          placeholder="Nom du testeur (optionnel)"
+          placeholder={tr("Nom du testeur (optionnel)")}
           className="h-11 flex-1 rounded-xl border border-border bg-background px-3 text-sm outline-none focus:border-primary"
         />
         <button
           onClick={handleCreate}
           className="flex h-11 items-center gap-1.5 rounded-xl bg-primary px-3 text-sm font-semibold text-primary-foreground active:scale-[0.98]"
         >
-          <UserPlus className="h-4 w-4" /> Créer
+          <UserPlus className="h-4 w-4" />{tr("Créer")}
         </button>
       </div>
 
       {invites.length === 0 ? (
-        <p className="mt-4 rounded-xl border border-dashed border-border p-3 text-center text-xs text-muted-foreground">
-          Aucune invitation pour l'instant.
+        <p className="mt-4 rounded-xl border border-dashed border-border p-3 text-center text-xs text-muted-foreground">{tr("Aucune invitation pour l'instant.")}
         </p>
       ) : (
         <ul className="mt-4 divide-y divide-border">
@@ -942,12 +921,12 @@ function TesterInvitesSection() {
                             : "bg-accent/20 text-accent-foreground"
                       }`}
                     >
-                      {expired ? "Expiré" : used ? "Activé" : "En attente"}
+                      {expired ? tr("Expiré") : used ? tr("Activé") : tr("En attente")}
                     </span>
                   </div>
                   <p className="truncate text-[11px] text-muted-foreground">
                     {inv.label}
-                    {used && inv.redeemedBy ? ` · par ${inv.redeemedBy}` : ""}
+                    {used && inv.redeemedBy ? tr(" · par {name}", { name: inv.redeemedBy }) : ""}
                     {!expired && (
                       <>
                         {" · "}
@@ -959,7 +938,7 @@ function TesterInvitesSection() {
                 <button
                   onClick={() => copy(inv.code)}
                   disabled={expired}
-                  aria-label="Copier le lien"
+                  aria-label={tr("Copier le lien")}
                   className="flex h-9 w-9 items-center justify-center rounded-lg border border-border bg-background disabled:opacity-40"
                 >
                   <Copy className="h-4 w-4" />
@@ -967,7 +946,7 @@ function TesterInvitesSection() {
                 <button
                   onClick={() => share(inv.code)}
                   disabled={expired}
-                  aria-label="Partager le lien"
+                  aria-label={tr("Partager le lien")}
                   className="flex h-9 w-9 items-center justify-center rounded-lg border border-border bg-background disabled:opacity-40"
                 >
                   <Share2 className="h-4 w-4" />
@@ -975,9 +954,9 @@ function TesterInvitesSection() {
                 <button
                   onClick={() => {
                     revokeInvite(inv.code);
-                    toast.success("Invitation révoquée");
+                    toast.success(tr("Invitation révoquée"));
                   }}
-                  aria-label="Révoquer"
+                  aria-label={tr("Révoquer")}
                   className="flex h-9 w-9 items-center justify-center rounded-lg border border-border bg-background text-destructive"
                 >
                   <Trash2 className="h-4 w-4" />
@@ -991,10 +970,48 @@ function TesterInvitesSection() {
   );
 }
 
-function Toggle({ label, defaultOn }: { label: string; defaultOn?: boolean }) {
-  const [on, setOn] = useState(!!defaultOn);
+/** Interrupteur de préférence de découverte, enregistré sur le profil (API). */
+function PrefToggle({
+  label,
+  field,
+  defaultOn,
+}: {
+  label: string;
+  field: "appearInSuggestions" | "detectLinks" | "receiveInvites";
+  defaultOn: boolean;
+}) {
+  const { person, isAuthenticated, useMocks, updateLocalPerson } = useAuth();
+  const saved = person?.[field];
+  const [on, setOn] = useState(saved ?? defaultOn);
+  const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    setOn(saved ?? defaultOn);
+  }, [saved, defaultOn]);
+
+  const flip = async () => {
+    if (busy) return;
+    const next = !on;
+    setOn(next);
+    if (useMocks || !isAuthenticated || !person) return;
+    setBusy(true);
+    try {
+      const res = await updatePerson(person.id, { [field]: next });
+      updateLocalPerson(res.data);
+    } catch (e) {
+      setOn(!next);
+      toast.error(e instanceof Error ? e.message : tr("Préférence non enregistrée"));
+    } finally {
+      setBusy(false);
+    }
+  };
+
   return (
-    <button onClick={() => setOn(!on)} className="flex w-full items-center justify-between py-2.5 text-left">
+    <button
+      onClick={() => void flip()}
+      disabled={busy}
+      className="flex w-full items-center justify-between py-2.5 text-left disabled:opacity-60"
+    >
       <span className="text-sm">{label}</span>
       <span className={`relative h-6 w-10 rounded-full transition ${on ? "bg-primary" : "bg-muted"}`}>
         <span

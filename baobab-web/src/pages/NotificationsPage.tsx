@@ -17,6 +17,7 @@ import { useLinkRequests, resolveLinkRequest, statusLabel, type LinkStatus } fro
 import { useAuth } from "../lib/auth/AuthProvider";
 import { ApiError, decideRequest, getNotifications, type NotificationsPayload } from "../lib/api";
 
+import { tr } from "../lib/i18n/I18nProvider";
 const demoItems = [
   {
     type: "link",
@@ -98,7 +99,7 @@ export function NotificationsPage() {
     if (!person) return;
     try {
       await decideRequest(requestId, decision);
-      toast.success(decision === "approved" ? "Demande acceptée" : "Demande refusée");
+      toast.success(decision === "approved" ? tr("Demande acceptée") : tr("Demande refusée"));
       await load();
     } catch (e) {
       toast.error(e instanceof ApiError ? e.message : "Action impossible");
@@ -108,13 +109,13 @@ export function NotificationsPage() {
   return (
     <div className="flex flex-col">
       <header className="sticky top-0 z-20 border-b border-border bg-background/90 px-4 pb-3 pt-5 backdrop-blur">
-        <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">Notifications</p>
-        <h1 className="font-display text-2xl text-foreground">Activité familiale</h1>
+        <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">{tr("Notifications")}</p>
+        <h1 className="font-display text-2xl text-foreground">{tr("Activité familiale")}</h1>
       </header>
 
       {loading && (
         <div className="flex items-center justify-center gap-2 py-8 text-sm text-muted-foreground">
-          <Loader2 className="h-4 w-4 animate-spin" /> Chargement…
+          <Loader2 className="h-4 w-4 animate-spin" />{tr("Chargement…")}
         </div>
       )}
 
@@ -122,8 +123,7 @@ export function NotificationsPage() {
         <>
           {payload.pendingApprovals.length > 0 && (
             <section className="px-3 pt-3">
-              <h2 className="mb-2 px-1 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-                À approuver ({payload.summary.pendingApprovalsCount})
+              <h2 className="mb-2 px-1 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">{tr("À approuver (")}{payload.summary.pendingApprovalsCount})
               </h2>
               <ul className="space-y-2">
                 {payload.pendingApprovals.map((item) => {
@@ -136,21 +136,19 @@ export function NotificationsPage() {
                       </div>
                       <div className="flex-1">
                         <p className="text-sm leading-snug text-foreground">
-                          <span className="font-semibold">{name}</span> demande un lien{" "}
+                          <span className="font-semibold">{name}</span>{tr("demande un lien")}{" "}
                           <span className="font-semibold">{item.requestType}</span>
                         </p>
                         <div className="mt-2 flex gap-2">
                           <button
                             onClick={() => void onDecide(item.requestId, "approved")}
                             className="min-h-11 rounded-lg bg-primary px-3 text-xs font-medium text-primary-foreground"
-                          >
-                            Accepter
+                          >{tr("Accepter")}
                           </button>
                           <button
                             onClick={() => void onDecide(item.requestId, "rejected")}
                             className="min-h-11 rounded-lg border border-border bg-background px-3 text-xs font-medium"
-                          >
-                            Refuser
+                          >{tr("Refuser")}
                           </button>
                         </div>
                       </div>
@@ -163,8 +161,7 @@ export function NotificationsPage() {
 
           {payload.myRequests.length > 0 && (
             <section className="px-3 pt-3">
-              <h2 className="mb-2 px-1 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-                Mes demandes
+              <h2 className="mb-2 px-1 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">{tr("Mes demandes")}
               </h2>
               <ul className="space-y-2">
                 {payload.myRequests.map((r) => (
@@ -173,12 +170,10 @@ export function NotificationsPage() {
                       <Send className="h-5 w-5" />
                     </div>
                     <div className="flex-1">
-                      <p className="text-sm leading-snug text-foreground">
-                        Demande <span className="font-semibold">{r.relationshipType}</span> —{" "}
+                      <p className="text-sm leading-snug text-foreground">{tr("Demande")}{" "}<span className="font-semibold">{r.relationshipType}</span> —{" "}
                         <span className="font-semibold">{statusLabelFr(r.status)}</span>
                       </p>
-                      <p className="mt-0.5 text-[11px] text-muted-foreground">
-                        Votes {r.approvedVotes}/{r.totalVotes} (en attente {r.pendingVotes})
+                      <p className="mt-0.5 text-[11px] text-muted-foreground">{tr("Votes")}{" "}{r.approvedVotes}/{r.totalVotes}{tr("(en attente")}{" "}{r.pendingVotes})
                       </p>
                     </div>
                   </li>
@@ -191,8 +186,7 @@ export function NotificationsPage() {
 
       {linkRequests.length > 0 && (
         <section className="px-3 pt-3">
-          <h2 className="mb-2 px-1 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-            Mes demandes de lien (local)
+          <h2 className="mb-2 px-1 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">{tr("Mes demandes de lien (local)")}
           </h2>
           <ul className="space-y-2">
             {linkRequests.map((r) => (
@@ -201,8 +195,7 @@ export function NotificationsPage() {
                   <Send className="h-5 w-5" />
                 </div>
                 <div className="flex-1">
-                  <p className="text-sm leading-snug text-foreground">
-                    Demande envoyée à <span className="font-semibold">{r.targetName}</span> en tant que{" "}
+                  <p className="text-sm leading-snug text-foreground">{tr("Demande envoyée à")}{" "}<span className="font-semibold">{r.targetName}</span>{tr("en tant que")}{" "}
                     <span className="font-semibold">{r.relation.toLowerCase()}</span>
                   </p>
                   <div className="mt-1 flex items-center gap-2">
@@ -216,14 +209,12 @@ export function NotificationsPage() {
                       <button
                         onClick={() => resolveLinkRequest(r.id, "accepted")}
                         className="rounded-lg border border-border bg-background px-2.5 py-1 text-[11px] font-medium text-muted-foreground"
-                      >
-                        Simuler acceptation
+                      >{tr("Simuler acceptation")}
                       </button>
                       <button
                         onClick={() => resolveLinkRequest(r.id, "rejected")}
                         className="rounded-lg border border-border bg-background px-2.5 py-1 text-[11px] font-medium text-muted-foreground"
-                      >
-                        Simuler refus
+                      >{tr("Simuler refus")}
                       </button>
                     </div>
                   )}
@@ -263,8 +254,7 @@ export function NotificationsPage() {
               </li>
             ))
           ) : (
-            <li className="rounded-2xl border border-dashed border-border bg-card p-4 text-sm text-muted-foreground">
-              Connecte-toi pour voir les demandes de lien à approuver.
+            <li className="rounded-2xl border border-dashed border-border bg-card p-4 text-sm text-muted-foreground">{tr("Connecte-toi pour voir les demandes de lien à approuver.")}
             </li>
           )}
         </ul>
@@ -274,10 +264,10 @@ export function NotificationsPage() {
 }
 
 function statusLabelFr(status: string): string {
-  if (status === "pending") return "en attente des votes";
-  if (status === "approved") return "acceptée";
-  if (status === "rejected") return "refusée par tous";
-  if (status === "contested") return "procédure — chaque parti garde son appellation";
+  if (status === "pending") return tr("en attente des votes");
+  if (status === "approved") return tr("acceptée");
+  if (status === "rejected") return tr("refusée par tous");
+  if (status === "contested") return tr("procédure — chaque parti garde son appellation");
   return status;
 }
 

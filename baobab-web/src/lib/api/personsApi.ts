@@ -1,5 +1,5 @@
 import { apiRequest } from "./client";
-import type { ApiPerson, FamilyTreeResult, PersonProfileUpdate } from "./types";
+import type { ApiPerson, DiscoverResult, FamilyTreeResult, PersonProfileUpdate } from "./types";
 
 type Ok<T> = { ok: true; count?: number; data: T };
 
@@ -65,4 +65,9 @@ export async function createRelative(input: CreateRelativeInput) {
     auth: true,
     body: input,
   });
+}
+
+/** Membres qui ont activé « Apparaître dans les suggestions » + liens potentiels (connecté). */
+export async function getDiscover() {
+  return apiRequest<{ ok: true; data: DiscoverResult }>("/persons/discover", { auth: true });
 }

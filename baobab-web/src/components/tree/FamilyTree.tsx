@@ -2,7 +2,7 @@ import { useMemo } from "react";
 import { Lock, Crown, Star, Award, BadgeCheck, Flower2 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import type { Person } from "./types";
-import { useI18n } from "../../lib/i18n/I18nProvider";
+import { useI18n, tr } from "../../lib/i18n/I18nProvider";
 
 type Props = {
   people: Person[];
@@ -52,7 +52,7 @@ export function FamilyTree({
   return (
     <div className="flex flex-col items-stretch gap-2 pb-6">
       {showAncestors2 && ancestorsGen2.length > 0 && (
-        <Generation label="Grands-parents" rail={ancestorsGen2.length > 1}>
+        <Generation label={tr("Grands-parents")} rail={ancestorsGen2.length > 1}>
           {ancestorsGen2.map((p) => (
             <Node key={p.id} p={p} selected={selectedId === p.id} onSelect={onSelect} small />
           ))}
@@ -60,13 +60,13 @@ export function FamilyTree({
       )}
       {showAncestors2 && ancestorsGen2.length > 0 && <Connector label={t<string>("tree.relParent")} />}
       {showAncestors1 && ancestorsGen1.length > 0 && (
-        <Generation label="Parents">
+        <Generation label={tr("Parents")}>
           <CoupleRow people={ancestorsGen1} selectedId={selectedId} onSelect={onSelect} />
         </Generation>
       )}
       {showAncestors1 && ancestorsGen1.length > 0 && <Connector label={t<string>("tree.relParent")} />}
 
-      <Generation label="Toi & fratrie" tone="primary" rail={siblings.length > 0}>
+      <Generation label={tr("Toi & fratrie")} tone="primary" rail={siblings.length > 0}>
         {siblings.map((p) => (
           <Node key={p.id} p={p} selected={selectedId === p.id} onSelect={onSelect} small />
         ))}
@@ -87,11 +87,11 @@ export function FamilyTree({
 
       {showChildren && children.length > 0 && <Connector label={t<string>("tree.relChild")} />}
       {showChildren && children.length > 0 && (
-        <Generation label="Enfants" rail={children.length > 1}>
+        <Generation label={tr("Enfants")} rail={children.length > 1}>
           {children.map((p) => (
             <Node key={p.id} p={p} selected={selectedId === p.id} onSelect={onSelect} small />
           ))}
-          <AddNode label="Ajouter" onClick={() => onSelect("__add__")} />
+          <AddNode label={tr("Ajouter")} onClick={() => onSelect("__add__")} />
         </Generation>
       )}
     </div>
@@ -185,24 +185,24 @@ type Badge = { Icon: LucideIcon; tone: string; label: string };
 /** Badges accrochés à la pastille : chef de famille, titre / statut social, vérification. */
 function getBadges(p: Person): { topRight?: Badge; topLeft?: Badge; bottomLeft?: Badge } {
   const topRight: Badge | undefined = p.headOfFamily
-    ? { Icon: Crown, tone: "bg-gold text-gold-foreground", label: "Chef de famille" }
+    ? { Icon: Crown, tone: "bg-gold text-gold-foreground", label: tr("Chef de famille") }
     : p.verified
-      ? { Icon: BadgeCheck, tone: "bg-primary text-primary-foreground", label: "Vérifié" }
+      ? { Icon: BadgeCheck, tone: "bg-primary text-primary-foreground", label: tr("Vérifié") }
       : undefined;
 
   const topLeft: Badge | undefined =
     p.title === "chief"
-      ? { Icon: Award, tone: "bg-earth text-earth-foreground", label: "Chef traditionnel" }
+      ? { Icon: Award, tone: "bg-earth text-earth-foreground", label: tr("Chef traditionnel") }
       : p.title === "elder"
-        ? { Icon: Star, tone: "bg-accent text-accent-foreground", label: "Ancien" }
+        ? { Icon: Star, tone: "bg-accent text-accent-foreground", label: tr("Ancien") }
         : p.title === "notable"
-          ? { Icon: Star, tone: "bg-muted text-muted-foreground", label: "Notable" }
+          ? { Icon: Star, tone: "bg-muted text-muted-foreground", label: tr("Notable") }
           : undefined;
 
   const bottomLeft: Badge | undefined = !p.verified
-    ? { Icon: Lock, tone: "bg-card text-muted-foreground ring-1 ring-border", label: "Non vérifié" }
+    ? { Icon: Lock, tone: "bg-card text-muted-foreground ring-1 ring-border", label: tr("Non vérifié") }
     : p.status === "deceased" || p.death
-      ? { Icon: Flower2, tone: "bg-muted text-muted-foreground", label: "Décédé(e)" }
+      ? { Icon: Flower2, tone: "bg-muted text-muted-foreground", label: tr("Décédé(e)") }
       : undefined;
 
   return { topRight, topLeft, bottomLeft };

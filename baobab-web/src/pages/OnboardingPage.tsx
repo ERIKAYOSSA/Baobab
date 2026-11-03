@@ -57,6 +57,7 @@ import {
   AlertDialogAction,
 } from "../components/ui/alert-dialog";
 
+import { tr } from "../lib/i18n/I18nProvider";
 type RelativeHit = {
   id: string;
   n: string;
@@ -94,11 +95,11 @@ function personToRelativeHit(p: ApiPerson): RelativeHit {
 
 function formatRecent(ms: number): string {
   const hours = Math.max(1, Math.floor((Date.now() - ms) / (1000 * 60 * 60)));
-  if (hours < 24) return `inscrit il y a ${hours} h`;
+  if (hours < 24) return tr("inscrit il y a {n} h", { n: hours });
   const days = Math.floor(hours / 24);
-  if (days === 1) return "inscrit hier";
-  if (days < 14) return `inscrit il y a ${days} j`;
-  return "inscrit récemment";
+  if (days === 1) return tr("inscrit hier");
+  if (days < 14) return tr("inscrit il y a {n} j", { n: days });
+  return tr("inscrit récemment");
 }
 
 const COUNTRIES = [
@@ -241,7 +242,7 @@ export function OnboardingPage() {
               n: lastName ? `${firstName || "Awa"} ${lastName}` : "Awa Mensah",
               c: locality,
               tree: 12,
-              reason: "Même nom de famille",
+              reason: tr("Même nom de famille"),
               createdAtMs: Date.now() - 1000 * 60 * 60 * 5,
             },
             {
@@ -249,7 +250,7 @@ export function OnboardingPage() {
               n: "Kofi Ndjock",
               c: locality,
               tree: 8,
-              reason: "Même localité",
+              reason: tr("Même localité"),
               createdAtMs: Date.now() - 1000 * 60 * 60 * 26,
             },
             {
@@ -257,7 +258,7 @@ export function OnboardingPage() {
               n: "Esther Mballa",
               c: birthCity || "Yaoundé",
               tree: 21,
-              reason: "Même localité",
+              reason: tr("Même localité"),
               createdAtMs: Date.now() - 1000 * 60 * 60 * 48,
             },
           ];
@@ -282,7 +283,7 @@ export function OnboardingPage() {
               (lastName.length >= 2 && p.lastName?.toLowerCase().includes(lastName.toLowerCase())) ||
               (firstName.length >= 2 && p.firstName?.toLowerCase().includes(firstName.toLowerCase()));
             if (!sameLocality && !sameName) continue;
-            hit.reason = sameLocality && sameName ? "Même localité · même nom" : sameLocality ? "Même localité" : "Même nom";
+            hit.reason = sameLocality && sameName ? tr("Même localité · même nom") : sameLocality ? tr("Même localité") : tr("Même nom");
             const prev = byId.get(hit.id);
             if (!prev || (hit.createdAtMs ?? 0) > (prev.createdAtMs ?? 0)) byId.set(hit.id, hit);
           }
@@ -390,8 +391,8 @@ export function OnboardingPage() {
     }
     const national = nationalNumber.replace(/\D/g, "");
     if (national.length < 6) {
-      toast.error("Indique un numéro valide", {
-        description: `Ex. ${selectedCountry.flag} +${dialCode} 6XX XXX XXX`,
+      toast.error(tr("Indique un numéro valide"), {
+        description: tr("Ex. {flag} +{dial} 6XX XXX XXX", { flag: selectedCountry.flag, dial: dialCode }),
       });
       return;
     }
@@ -402,10 +403,10 @@ export function OnboardingPage() {
         const res = await sendOtp(trimmed);
         setOtpSent(true);
         setE164Phone(res.data.phone);
-        toast.success("Code envoyé", {
+        toast.success(tr("Code envoyé"), {
           description: res.data.devCode
-            ? `Mode dev — code : ${res.data.devCode}`
-            : "Vérifie tes SMS.",
+            ? tr("Mode dev — code : {code}", { code: res.data.devCode })
+            : tr("Vérifie tes SMS."),
         });
         focusOtp(0);
         return;
@@ -415,22 +416,22 @@ export function OnboardingPage() {
       if ("signupRequired" in data && data.signupRequired) {
         setPhoneVerifiedToken(data.phoneVerifiedToken);
         setE164Phone(data.phone);
-        toast.success("Téléphone vérifié");
+        toast.success(tr("Téléphone vérifié"));
         next();
         return;
       }
       if ("pinRequired" in data && data.pinRequired && !("token" in data)) {
         setPinRequired(true);
-        toast.message("PIN requis", { description: "Entre le PIN de ton compte." });
+        toast.message(tr("PIN requis"), { description: tr("Entre le PIN de ton compte.") });
         return;
       }
       if ("token" in data && data.token) {
         setSession(data.token, data.person, data.refreshToken);
-        toast.success("Connexion réussie");
+        toast.success(tr("Connexion réussie"));
         navigate("/tree");
       }
     } catch (e) {
-      toast.error(e instanceof ApiError ? e.message : "Échec de la vérification");
+      toast.error(e instanceof ApiError ? e.message : tr("Échec de la vérification"));
     } finally {
       setAuthBusy(false);
     }
@@ -454,30 +455,30 @@ export function OnboardingPage() {
             relation,
           });
           setRequestId(req.id);
-          toast.success("Demande envoyée", {
-            description: `${target.n} doit confirmer le lien « ${relation} ».`,
+          toast.success(tr("Demande envoyée"), {
+            description: tr("{name} doit confirmer le lien « {relation} ».", { name: target.n, relation }),
           });
         } catch {
-          toast.error("Échec de l'envoi. Réessaie.");
+          toast.error(tr("Échec de l'envoi. Réessaie."));
         } finally {
           setSending(false);
         }
         return;
       }
-      toast.success("Bienvenue sur Baobab", {
-        description: "Commence par ajouter tes parents à ton arbre.",
+      toast.success(tr("Bienvenue sur Baobab"), {
+        description: tr("Commence par ajouter tes parents à ton arbre."),
       });
       navigate("/tree");
       return;
     }
 
     if (!phoneVerifiedToken) {
-      toast.error("Session expirée", { description: "Recommence la vérification SMS." });
+      toast.error(tr("Session expirée"), { description: tr("Recommence la vérification SMS.") });
       setStep(1);
       return;
     }
     if (!name.trim()) {
-      toast.error("Indique ton nom");
+      toast.error(tr("Indique ton nom"));
       setStep(3);
       return;
     }
@@ -519,26 +520,26 @@ export function OnboardingPage() {
               targetPersonId: chosenRelative,
               direction: mapped.direction,
             });
-            toast.success("Demande de lien envoyée", {
+            toast.success(tr("Demande de lien envoyée"), {
               description: `${target.n} · ${relation}`,
             });
           } catch (e) {
-            toast.message("Compte créé", {
+            toast.message(tr("Compte créé"), {
               description:
                 e instanceof ApiError
-                  ? `Lien non envoyé : ${e.message}`
-                  : "Tu pourras proposer le lien plus tard.",
+                  ? tr("Lien non envoyé : {msg}", { msg: e.message })
+                  : tr("Tu pourras proposer le lien plus tard."),
             });
           }
         }
       } else {
-        toast.success("Bienvenue sur Baobab", {
-          description: "Commence par ajouter tes parents à ton arbre.",
+        toast.success(tr("Bienvenue sur Baobab"), {
+          description: tr("Commence par ajouter tes parents à ton arbre."),
         });
       }
       navigate("/tree");
     } catch (e) {
-      toast.error(e instanceof ApiError ? e.message : "Impossible de créer le compte");
+      toast.error(e instanceof ApiError ? e.message : tr("Impossible de créer le compte"));
     } finally {
       setSending(false);
     }
@@ -568,10 +569,10 @@ export function OnboardingPage() {
 
       <div className="flex-1 px-5 pt-4">
         {step === 1 && (
-          <Step icon={Phone} title="Ton numéro" subtitle="On t'envoie un code par SMS pour créer et te lier à ce compte.">
+          <Step icon={Phone} title={tr("Ton numéro")} subtitle={tr("On t'envoie un code par SMS pour créer et te lier à ce compte.")}>
             <div className="flex gap-2">
               <label className="relative shrink-0">
-                <span className="sr-only">Indicatif pays</span>
+                <span className="sr-only">{tr("Indicatif pays")}</span>
                 <div className="pointer-events-none absolute inset-y-0 right-2 flex items-center text-muted-foreground">
                   <ChevronDown className="h-3.5 w-3.5" />
                 </div>
@@ -586,7 +587,7 @@ export function OnboardingPage() {
                     setPinRequired(false);
                   }}
                   className="h-12 appearance-none rounded-2xl border border-border bg-card py-0 pl-3 pr-8 text-sm font-medium outline-none focus:border-primary"
-                  aria-label="Indicatif pays"
+                  aria-label={tr("Indicatif pays")}
                 >
                   {DIAL_COUNTRIES.map((c) => (
                     <option key={`${c.iso}-${c.dial}`} value={c.dial}>
@@ -606,7 +607,7 @@ export function OnboardingPage() {
                   setPhoneVerifiedToken(null);
                   setPinRequired(false);
                 }}
-                placeholder="6XX XXX XXX"
+                placeholder={tr("6XX XXX XXX")}
                 inputMode="tel"
                 autoComplete="tel-national"
                 className="h-12 min-w-0 flex-1 rounded-2xl border border-border bg-card px-4 text-base outline-none focus:border-primary"
@@ -617,8 +618,7 @@ export function OnboardingPage() {
               {nationalNumber ? ` ${nationalNumber}` : ""}
             </p>
             <div className="mt-3">
-              <p className="mb-1 text-xs text-muted-foreground">
-                Code reçu par SMS{otpSent ? " (6 chiffres)" : " — envoie d’abord le code"}
+              <p className="mb-1 text-xs text-muted-foreground">{tr("Code reçu par SMS")}{otpSent ? tr(" (6 chiffres)") : tr(" — envoie d’abord le code")}
               </p>
               <div className="flex justify-center gap-1.5">
                 {[0, 1, 2, 3, 4, 5].map((i) => (
@@ -645,7 +645,7 @@ export function OnboardingPage() {
             </div>
             {pinRequired && (
               <div className="mt-3">
-                <p className="mb-1 text-xs text-muted-foreground">PIN du compte</p>
+                <p className="mb-1 text-xs text-muted-foreground">{tr("PIN du compte")}</p>
                 <input
                   type="password"
                   inputMode="numeric"
@@ -662,22 +662,22 @@ export function OnboardingPage() {
         {step === 2 && (
           <Step
             icon={Search}
-            title="Connais-tu déjà un membre ?"
-            subtitle="Recherche un proche avant de déclarer tes parents."
+            title={tr("Connais-tu déjà un membre ?")}
+            subtitle={tr("Recherche un proche avant de déclarer tes parents.")}
           >
             <div className="flex items-center gap-2 rounded-2xl border border-border bg-card px-3 py-2.5">
               <Search className="h-4 w-4 text-muted-foreground" />
               <input
                 value={step15Search}
                 onChange={(e) => setStep15Search(e.target.value)}
-                placeholder="Nom de ton proche…"
+                placeholder={tr("Nom de ton proche…")}
                 className="flex-1 bg-transparent text-sm outline-none"
               />
             </div>
             <ul className="divide-y divide-border rounded-2xl border border-border bg-card">
               {searchingRelatives && (
                 <li className="flex items-center gap-2 p-3 text-xs text-muted-foreground">
-                  <Loader2 className="h-3.5 w-3.5 animate-spin" /> Recherche…
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />{tr("Recherche…")}
                 </li>
               )}
               {(useMocks
@@ -702,14 +702,14 @@ export function OnboardingPage() {
                     <p className="text-sm font-medium">{p.n}</p>
                     <p className="text-xs text-muted-foreground">
                       {p.c}
-                      {p.tree ? ` · ${p.tree} membres` : ""}
+                      {p.tree ? tr(" · {n} membres", { n: p.tree }) : ""}
                     </p>
                   </div>
                   {step15Chosen === p.id && <Check className="h-5 w-5 text-primary" />}
                 </li>
               ))}
               {!useMocks && !searchingRelatives && step15Search.trim().length >= 2 && relativesList.length === 0 && (
-                <li className="p-3 text-xs text-muted-foreground">Aucun résultat pour « {step15Search} »</li>
+                <li className="p-3 text-xs text-muted-foreground">{tr("Aucun résultat pour «")}{" "}{step15Search} »</li>
               )}
             </ul>
             <button
@@ -718,23 +718,22 @@ export function OnboardingPage() {
                 next();
               }}
               className="mt-2 w-full rounded-2xl border border-dashed border-border bg-card py-3 text-sm text-muted-foreground"
-            >
-              Personne trouvée — continuer
+            >{tr("Personne trouvée — continuer")}
             </button>
           </Step>
         )}
 
         {step === 3 && (
-          <Step icon={ShieldCheck} title="Qui es-tu ?" subtitle="Ces infos restent privées par défaut.">
-            <Field label="Nom complet">
+          <Step icon={ShieldCheck} title={tr("Qui es-tu ?")} subtitle={tr("Ces infos restent privées par défaut.")}>
+            <Field label={tr("Nom complet")}>
               <input
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                placeholder="Ex. erika nga"
+                placeholder={tr("Ex. Kojo Mensah")}
                 className="h-12 w-full rounded-2xl border border-border bg-card px-4 outline-none focus:border-primary"
               />
             </Field>
-            <Field label="Date de naissance">
+            <Field label={tr("Date de naissance")}>
               <input
                 value={dob}
                 onChange={(e) => setDob(e.target.value)}
@@ -744,39 +743,38 @@ export function OnboardingPage() {
             </Field>
             <div className="rounded-2xl border border-border bg-card/60 p-3 space-y-3">
               <div>
-                <p className="text-xs font-medium text-foreground">Lieu de naissance</p>
-                <p className="text-[11px] text-muted-foreground">
-                  Pays · ville · quartier — crucial pour rapprocher les liens familiaux.
+                <p className="text-xs font-medium text-foreground">{tr("Lieu de naissance")}</p>
+                <p className="text-[11px] text-muted-foreground">{tr("Pays · ville · quartier — crucial pour rapprocher les liens familiaux.")}
                 </p>
               </div>
-              <Field label="Pays">
+              <Field label={tr("Pays")}>
                 <CountryAutocomplete
                   value={birthCountry}
                   onChange={setBirthCountry}
-                  placeholder="Ex. Cameroun"
+                  placeholder={tr("Ex. Cameroun")}
                 />
               </Field>
-              <Field label="Ville">
+              <Field label={tr("Ville")}>
                 <CityAutocomplete
                   country={birthCountry}
                   value={birthCity}
                   onChange={setBirthCity}
                 />
               </Field>
-              <Field label="Quartier">
+              <Field label={tr("Quartier")}>
                 <input
                   value={birthQuarter}
                   onChange={(e) => setBirthQuarter(e.target.value)}
-                  placeholder="Ex. Akwa, Bastos, Bonamoussadi…"
+                  placeholder={tr("Ex. Akwa, Bastos, Bonamoussadi…")}
                   className="h-12 w-full rounded-2xl border border-border bg-background px-4 outline-none focus:border-primary"
                 />
               </Field>
             </div>
-            <Field label="Genre">
+            <Field label={tr("Genre")}>
               <div className="grid grid-cols-2 gap-2">
                 {[
-                  { v: "f", l: "Femme" },
-                  { v: "m", l: "Homme" },
+                  { v: "f", l: tr("Femme") },
+                  { v: "m", l: tr("Homme") },
                 ].map((o) => (
                   <button
                     key={o.v}
@@ -798,8 +796,8 @@ export function OnboardingPage() {
         {step === 4 && (
           <Step
             icon={Camera}
-            title="Identité"
-            subtitle="Enrôlement facial pour t’enregistrer, puis pièce d’identité (exigée en version finale)."
+            title={tr("Identité")}
+            subtitle={tr("Enrôlement facial pour t’enregistrer, puis pièce d’identité (exigée en version finale).")}
           >
             <div className="rounded-2xl border border-border bg-card p-4">
               <div className="mb-3 flex items-center gap-2">
@@ -807,9 +805,8 @@ export function OnboardingPage() {
                   <Camera className="h-4 w-4" />
                 </div>
                 <div>
-                  <p className="text-sm font-medium">Enrôlement facial</p>
-                  <p className="text-[11px] text-muted-foreground">
-                    Capture biométrique du visage — distincte de ta photo de profil.
+                  <p className="text-sm font-medium">{tr("Enrôlement facial")}</p>
+                  <p className="text-[11px] text-muted-foreground">{tr("Capture biométrique du visage — distincte de ta photo de profil.")}
                   </p>
                 </div>
               </div>
@@ -824,7 +821,7 @@ export function OnboardingPage() {
             </div>
 
             <div className="mt-3 space-y-2">
-              <p className="text-xs font-medium text-muted-foreground">Pièce d’identité</p>
+              <p className="text-xs font-medium text-muted-foreground">{tr("Pièce d’identité")}</p>
               <button
                 type="button"
                 onClick={() => idFileRef.current?.click()}
@@ -836,8 +833,8 @@ export function OnboardingPage() {
                   <IdCard className="h-5 w-5" />
                 </div>
                 <div className="flex-1">
-                  <p className="font-medium">{hasId ? "Pièce ajoutée" : "Téléverser ma pièce"}</p>
-                  <p className="text-xs text-muted-foreground">CNI, passeport, permis</p>
+                  <p className="font-medium">{hasId ? tr("Pièce ajoutée") : tr("Téléverser ma pièce")}</p>
+                  <p className="text-xs text-muted-foreground">{tr("CNI, passeport, permis")}</p>
                 </div>
                 {hasId === true && <Check className="h-5 w-5 text-primary" />}
               </button>
@@ -864,7 +861,7 @@ export function OnboardingPage() {
               {idPreview && (
                 <img
                   src={idPreview}
-                  alt="Aperçu pièce d’identité"
+                  alt={tr("Aperçu pièce d’identité")}
                   className="max-h-36 w-full rounded-2xl border border-border object-cover"
                 />
               )}
@@ -879,17 +876,14 @@ export function OnboardingPage() {
                   …
                 </div>
                 <div className="flex-1">
-                  <p className="font-medium">Passer pour les tests</p>
-                  <p className="text-xs text-muted-foreground">
-                    En version finale, la pièce sera obligatoire
+                  <p className="font-medium">{tr("Passer pour les tests")}</p>
+                  <p className="text-xs text-muted-foreground">{tr("En version finale, la pièce sera obligatoire")}
                   </p>
                 </div>
               </button>
               {hasId === false && (
                 <div className="flex gap-2 rounded-2xl border border-accent/40 bg-accent/10 p-3 text-xs text-accent-foreground">
-                  <AlertTriangle className="h-4 w-4 shrink-0" />
-                  Mode testeur : tu continues sans pièce. La vérification d’identité sera exigée en
-                  production.
+                  <AlertTriangle className="h-4 w-4 shrink-0" />{tr("Mode testeur : tu continues sans pièce. La vérification d’identité sera exigée en production.")}
                 </div>
               )}
             </div>
@@ -898,12 +892,9 @@ export function OnboardingPage() {
               <AlertDialogContent>
                 <AlertDialogHeader>
                   <AlertDialogTitle className="flex items-center gap-2">
-                    <AlertTriangle className="h-5 w-5 text-accent-foreground" />
-                    Mode testeur
+                    <AlertTriangle className="h-5 w-5 text-accent-foreground" />{tr("Mode testeur")}
                   </AlertDialogTitle>
-                  <AlertDialogDescription>
-                    Pour l’instant tu peux continuer sans pièce d’identité. En version finale, elle
-                    sera obligatoire pour débloquer les fonctionnalités sensibles.
+                  <AlertDialogDescription>{tr("Pour l’instant tu peux continuer sans pièce d’identité. En version finale, elle sera obligatoire pour débloquer les fonctionnalités sensibles.")}
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
@@ -914,8 +905,7 @@ export function OnboardingPage() {
                       setShowIdAlert(false);
                       next();
                     }}
-                  >
-                    Continuer sans pièce
+                  >{tr("Continuer sans pièce")}
                   </AlertDialogAction>
                 </AlertDialogFooter>
               </AlertDialogContent>
@@ -926,12 +916,11 @@ export function OnboardingPage() {
         {step === 5 && (
           <Step
             icon={Globe}
-            title="Identité culturelle"
-            subtitle="Ces informations enrichissent ton arbre et t'aident à découvrir des liens."
+            title={tr("Identité culturelle")}
+            subtitle={tr("Ces informations enrichissent ton arbre et t'aident à découvrir des liens.")}
           >
-            <Field label="Nationalité" required>
-              <p className="mb-2 text-xs text-muted-foreground">
-                Ex. Camerounaise{gender === "m" ? " / Camerounais" : ""} — pas le nom du pays.
+            <Field label={tr("Nationalité")} required>
+              <p className="mb-2 text-xs text-muted-foreground">{tr("Ex. Camerounaise")}{gender === "m" ? tr(" / Camerounais") : ""}{tr("— pas le nom du pays.")}
               </p>
               {nationalities.map((nat, idx) => (
                 <div key={idx} className="mb-2">
@@ -948,7 +937,7 @@ export function OnboardingPage() {
                     }}
                     onRemove={idx > 0 ? () => setNationalities(nationalities.filter((_, i) => i !== idx)) : undefined}
                     suggestions={nationalitySuggestions}
-                    placeholder="Tape les premières lettres… (ex. Came)"
+                    placeholder={tr("Tape les premières lettres… (ex. Came)")}
                     mode="single"
                   />
                 </div>
@@ -958,32 +947,30 @@ export function OnboardingPage() {
                   onClick={() => setNationalities([...nationalities, ""])}
                   className="mt-1 flex items-center gap-1.5 rounded-full border border-dashed border-border bg-card px-3 py-1.5 text-xs font-medium text-muted-foreground hover:border-primary hover:text-primary"
                 >
-                  <Plus className="h-3.5 w-3.5" /> Ajouter une autre nationalité légale
+                  <Plus className="h-3.5 w-3.5" />{tr("Ajouter une autre nationalité légale")}
                 </button>
               )}
             </Field>
-            <Field label="Pays d'origine">
-              <p className="mb-2 text-xs text-muted-foreground">
-                Par défaut = pays de ta nationalité. Sert à filtrer les ethnies.
+            <Field label={tr("Pays d'origine")}>
+              <p className="mb-2 text-xs text-muted-foreground">{tr("Par défaut = pays de ta nationalité. Sert à filtrer les ethnies.")}
               </p>
               <CountryAutocomplete
                 value={countryOfOrigin}
                 onChange={setCountryOfOrigin}
-                placeholder="Tape les premières lettres…"
+                placeholder={tr("Tape les premières lettres…")}
               />
             </Field>
-            <Field label="Origine / Ethnie">
+            <Field label={tr("Origine / Ethnie")}>
               <SuggestionAutocomplete
                 value={ethnicity}
                 onChange={setEthnicity}
                 suggestions={ethnicitySuggestions}
-                placeholder={`Premières lettres… (${originCountry || "choisis un pays d’origine"})`}
+                placeholder={tr("Premières lettres… ({country})", { country: originCountry || tr("choisis un pays d’origine") })}
                 mode="single"
               />
             </Field>
-            <Field label="Langue(s) parlée(s)">
-              <p className="mb-2 text-xs text-muted-foreground">
-                Langues ethniques du pays d’origine + langues officielles du monde.
+            <Field label={tr("Langue(s) parlée(s)")}>
+              <p className="mb-2 text-xs text-muted-foreground">{tr("Langues ethniques du pays d’origine + langues officielles du monde.")}
               </p>
               {languages.map((lang, idx) => (
                 <div key={idx} className="mb-2">
@@ -996,7 +983,7 @@ export function OnboardingPage() {
                     }}
                     onRemove={idx > 0 ? () => setLanguages(languages.filter((_, i) => i !== idx)) : undefined}
                     suggestions={languageSuggestions}
-                    placeholder="Premières lettres…"
+                    placeholder={tr("Premières lettres…")}
                     mode="single"
                     icon={<Languages className="h-4 w-4 text-muted-foreground" />}
                   />
@@ -1007,7 +994,7 @@ export function OnboardingPage() {
                   onClick={() => setLanguages([...languages, ""])}
                   className="mt-1 flex items-center gap-1.5 rounded-full border border-dashed border-border bg-card px-3 py-1.5 text-xs font-medium text-muted-foreground hover:border-primary hover:text-primary"
                 >
-                  <Plus className="h-3.5 w-3.5" /> Ajouter une autre langue parlée
+                  <Plus className="h-3.5 w-3.5" />{tr("Ajouter une autre langue parlée")}
                 </button>
               )}
             </Field>
@@ -1017,8 +1004,8 @@ export function OnboardingPage() {
         {step === 6 && (
           <Step
             icon={Search}
-            title="Un proche déjà sur Baobab ?"
-            subtitle="Personnes nées dans ta localité ou portant le même nom, inscrites récemment."
+            title={tr("Un proche déjà sur Baobab ?")}
+            subtitle={tr("Personnes nées dans ta localité ou portant le même nom, inscrites récemment.")}
           >
             <div className="grid grid-cols-2 gap-2">
               <button
@@ -1026,8 +1013,7 @@ export function OnboardingPage() {
                 className={`h-12 rounded-2xl border text-sm font-medium ${
                   knowsRelative === true ? "border-primary bg-primary/10 text-primary" : "border-border bg-card"
                 }`}
-              >
-                Oui
+              >{tr("Oui")}
               </button>
               <button
                 onClick={() => {
@@ -1037,8 +1023,7 @@ export function OnboardingPage() {
                 className={`h-12 rounded-2xl border text-sm font-medium ${
                   knowsRelative === false ? "border-primary bg-primary/10 text-primary" : "border-border bg-card"
                 }`}
-              >
-                Non
+              >{tr("Non")}
               </button>
             </div>
             {knowsRelative === true && (
@@ -1048,17 +1033,17 @@ export function OnboardingPage() {
                   <input
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
-                    placeholder="Affiner par nom…"
+                    placeholder={tr("Affiner par nom…")}
                     className="flex-1 bg-transparent text-sm outline-none"
                   />
                 </div>
                 <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
-                  {search.trim().length >= 2 ? "Résultats de recherche" : "Suggestions pour toi"}
+                  {search.trim().length >= 2 ? tr("Résultats de recherche") : tr("Suggestions pour toi")}
                 </p>
                 <ul className="divide-y divide-border rounded-2xl border border-border bg-card">
                   {(loadingSuggestions || searchingRelatives) && (
                     <li className="flex items-center gap-2 p-3 text-xs text-muted-foreground">
-                      <Loader2 className="h-3.5 w-3.5 animate-spin" /> Chargement…
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />{tr("Chargement…")}
                     </li>
                   )}
                   {relativesList.map((p) => (
@@ -1088,14 +1073,13 @@ export function OnboardingPage() {
                   {!loadingSuggestions &&
                     !searchingRelatives &&
                     relativesList.length === 0 && (
-                      <li className="p-3 text-xs text-muted-foreground">
-                        Aucune personne trouvée pour ta localité ou ton nom. Essayez une recherche.
+                      <li className="p-3 text-xs text-muted-foreground">{tr("Aucune personne trouvée pour ta localité ou ton nom. Essayez une recherche.")}
                       </li>
                     )}
                 </ul>
                 {chosenRelative && (
                   <div>
-                    <p className="mb-1.5 text-xs text-muted-foreground">Quel est ton lien ?</p>
+                    <p className="mb-1.5 text-xs text-muted-foreground">{tr("Quel est ton lien ?")}</p>
                     <div className="flex flex-wrap gap-2">
                       {["Père", "Mère", "Frère", "Sœur", "Oncle", "Tante", "Cousin·e"].map((r) => (
                         <button
@@ -1105,7 +1089,7 @@ export function OnboardingPage() {
                             relation === r ? "bg-primary text-primary-foreground" : "border border-border bg-card"
                           }`}
                         >
-                          {r}
+                          {tr(r)}
                         </button>
                       ))}
                     </div>
@@ -1115,8 +1099,7 @@ export function OnboardingPage() {
               </div>
             )}
             {knowsRelative === false && (
-              <p className="mt-3 rounded-2xl border border-dashed border-border bg-card p-3 text-xs text-muted-foreground">
-                Pas de souci. Tu vas créer ton arbre en commençant par tes parents ou tes enfants.
+              <p className="mt-3 rounded-2xl border border-dashed border-border bg-card p-3 text-xs text-muted-foreground">{tr("Pas de souci. Tu vas créer ton arbre en commençant par tes parents ou tes enfants.")}
               </p>
             )}
           </Step>
@@ -1132,14 +1115,14 @@ export function OnboardingPage() {
                 return;
               }
               if (step === 5 && !step5Ready) {
-                toast.error("Nationalité requise", {
-                  description: "Indique ta nationalité (ex. Camerounaise) pour continuer.",
+                toast.error(tr("Nationalité requise"), {
+                  description: tr("Indique ta nationalité (ex. Camerounaise) pour continuer."),
                 });
                 return;
               }
               if (step === 4 && !facialEnrollment) {
-                toast.message("Enrôlement recommandé", {
-                  description: "L’enrôlement facial sert à t’enregistrer. Tu peux continuer pour les tests.",
+                toast.message(tr("Enrôlement recommandé"), {
+                  description: tr("L’enrôlement facial sert à t’enregistrer. Tu peux continuer pour les tests."),
                 });
               }
               next();
@@ -1149,27 +1132,22 @@ export function OnboardingPage() {
           >
             {authBusy ? (
               <>
-                <Loader2 className="h-4 w-4 animate-spin" /> Patiente…
+                <Loader2 className="h-4 w-4 animate-spin" />{tr("Patiente…")}
               </>
             ) : step === 1 && !useMocks && !otpSent ? (
-              <>
-                Recevoir le code <ChevronRight className="h-4 w-4" />
+              <>{tr("Recevoir le code")}{" "}<ChevronRight className="h-4 w-4" />
               </>
             ) : step === 1 && !useMocks && code.length < 6 ? (
-              <>
-                Renvoyer le code <ChevronRight className="h-4 w-4" />
+              <>{tr("Renvoyer le code")}{" "}<ChevronRight className="h-4 w-4" />
               </>
             ) : step === 1 && !useMocks && pinRequired ? (
-              <>
-                Se connecter <ChevronRight className="h-4 w-4" />
+              <>{tr("Se connecter")}{" "}<ChevronRight className="h-4 w-4" />
               </>
             ) : step === 1 && !useMocks ? (
-              <>
-                Vérifier le code <ChevronRight className="h-4 w-4" />
+              <>{tr("Vérifier le code")}{" "}<ChevronRight className="h-4 w-4" />
               </>
             ) : (
-              <>
-                Continuer <ChevronRight className="h-4 w-4" />
+              <>{tr("Continuer")}{" "}<ChevronRight className="h-4 w-4" />
               </>
             )}
           </button>
@@ -1181,27 +1159,26 @@ export function OnboardingPage() {
           >
             {sending ? (
               <>
-                <Loader2 className="h-4 w-4 animate-spin" /> Envoi de la demande…
+                <Loader2 className="h-4 w-4 animate-spin" />{tr("Envoi de la demande…")}
               </>
             ) : liveRequest?.status === "pending" ? (
               <>
-                <Clock className="h-4 w-4" /> En attente de confirmation…
+                <Clock className="h-4 w-4" />{tr("En attente de confirmation…")}
               </>
             ) : liveRequest?.status === "accepted" ? (
               <>
-                <PartyPopper className="h-4 w-4" /> Ouvrir mon arbre fusionné
+                <PartyPopper className="h-4 w-4" />{tr("Ouvrir mon arbre fusionné")}
               </>
             ) : liveRequest?.status === "rejected" ? (
               <>
-                <ChevronRight className="h-4 w-4" /> Continuer sans lien
+                <ChevronRight className="h-4 w-4" />{tr("Continuer sans lien")}
               </>
             ) : knowsRelative === true ? (
               <>
-                <Send className="h-4 w-4" /> Envoyer la demande
+                <Send className="h-4 w-4" />{tr("Envoyer la demande")}
               </>
             ) : (
-              <>
-                Créer mon arbre <ChevronRight className="h-4 w-4" />
+              <>{tr("Créer mon arbre")}{" "}<ChevronRight className="h-4 w-4" />
               </>
             )}
           </button>
@@ -1223,15 +1200,15 @@ function StatusCard({ request }: { request: NonNullable<ReturnType<typeof useLin
     <div className={`flex items-start gap-2 rounded-xl border p-3 text-[12px] ${tone}`}>
       <Icon className="mt-0.5 h-4 w-4 shrink-0" />
       <div className="flex-1">
-        <p className="font-semibold">Demande {statusLabel(request.status).toLowerCase()}</p>
+        <p className="font-semibold">{tr("Demande")}{" "}{statusLabel(request.status).toLowerCase()}</p>
         <p className="mt-0.5 text-foreground/80">
-          {request.status === "pending" && <>En attente de la confirmation de {request.targetName}…</>}
+          {request.status === "pending" && <>{tr("En attente de la confirmation de")}{" "}{request.targetName}…</>}
           {request.status === "accepted" && (
             <>
-              {request.targetName} a confirmé le lien « {request.relation} ». Vos arbres seront fusionnés.
+              {request.targetName}{tr("a confirmé le lien «")}{" "}{request.relation}{tr("». Vos arbres seront fusionnés.")}
             </>
           )}
-          {request.status === "rejected" && <>{request.targetName} n'a pas confirmé. Tu peux continuer sans lien.</>}
+          {request.status === "rejected" && <>{request.targetName}{tr("n'a pas confirmé. Tu peux continuer sans lien.")}</>}
         </p>
       </div>
     </div>
@@ -1445,7 +1422,7 @@ function SuggestionAutocomplete({
           className="h-12 flex-1 bg-transparent text-sm outline-none"
         />
         {onRemove && (
-          <button onClick={onRemove} className="text-muted-foreground hover:text-destructive" aria-label="Retirer">
+          <button onClick={onRemove} className="text-muted-foreground hover:text-destructive" aria-label={tr("Retirer")}>
             <X className="h-4 w-4" />
           </button>
         )}

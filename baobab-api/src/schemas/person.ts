@@ -44,7 +44,11 @@ const profileFieldsSchema = z.object({
   oralHistory: z.string().trim().max(4000).nullable().optional(),
   birthCountry: z.string().trim().max(120).nullable().optional(),
   birthCity: z.string().trim().max(120).nullable().optional(),
-  birthQuarter: z.string().trim().max(120).nullable().optional()
+  birthQuarter: z.string().trim().max(120).nullable().optional(),
+  /** Préférences de découverte (page Découvrir). Absent = activé, sauf receiveInvites. */
+  appearInSuggestions: z.boolean().nullable().optional(),
+  detectLinks: z.boolean().nullable().optional(),
+  receiveInvites: z.boolean().nullable().optional()
 });
 
 const personFieldsSchema = z

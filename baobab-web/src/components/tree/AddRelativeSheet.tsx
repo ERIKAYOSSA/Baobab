@@ -12,6 +12,7 @@ import {
 } from "../../lib/api";
 import type { Person } from "./types";
 
+import { tr } from "../../lib/i18n/I18nProvider";
 type Kind = "child_minor" | "child_deceased" | "parent_deceased" | "grandparent_deceased";
 
 const KINDS: { id: Kind; label: string; hint: string; icon: typeof Baby }[] = [
@@ -65,40 +66,40 @@ export function AddRelativeSheet({ me, people, meId, onClose, onDone }: Props) {
   const needsGender = kind === "child_minor" || kind === "child_deceased" || kind === "parent_deceased" || kind === "grandparent_deceased";
   const genderLabels =
     kind === "parent_deceased"
-      ? { male: "Père", female: "Mère" }
+      ? { male: tr("Père"), female: tr("Mère") }
       : kind === "grandparent_deceased"
-        ? { male: "Grand-père", female: "Grand-mère" }
-        : { male: "Garçon", female: "Fille" };
+        ? { male: tr("Grand-père"), female: tr("Grand-mère") }
+        : { male: tr("Garçon"), female: tr("Fille") };
 
   const submit = async () => {
     if (!kind) return;
     if (!firstName.trim() || !lastName.trim()) {
-      toast.error("Indique le prénom et le nom");
+      toast.error(tr("Indique le prénom et le nom"));
       return;
     }
     if (needsGender && !gender) {
-      toast.error("Indique le genre");
+      toast.error(tr("Indique le genre"));
       return;
     }
     if (kind === "child_minor") {
       if (!birthDate) {
-        toast.error("Indique la date de naissance de l'enfant");
+        toast.error(tr("Indique la date de naissance de l'enfant"));
         return;
       }
       if (birthDate < eighteenYearsAgo() || birthDate > today()) {
-        toast.error("Un enfant mineur doit avoir moins de 18 ans");
+        toast.error(tr("Un enfant mineur doit avoir moins de 18 ans"));
         return;
       }
     }
     if (kind === "grandparent_deceased") {
       if (!side) {
-        toast.error("Choisis le côté : père ou mère");
+        toast.error(tr("Choisis le côté : père ou mère"));
         return;
       }
       if ((side === "father" && !fatherId) || (side === "mother" && !motherId)) {
         toast.error(
-          side === "father" ? "Ajoute d'abord ton père dans l'arbre" : "Ajoute d'abord ta mère dans l'arbre",
-          { description: "Un grand-parent se rattache à un de tes parents." },
+          side === "father" ? tr("Ajoute d'abord ton père dans l'arbre") : tr("Ajoute d'abord ta mère dans l'arbre"),
+          { description: tr("Un grand-parent se rattache à un de tes parents.") },
         );
         return;
       }
@@ -117,7 +118,7 @@ export function AddRelativeSheet({ me, people, meId, onClose, onDone }: Props) {
       });
       const newId = created.data.id;
 
-      let message = "Proche ajouté";
+      let message = tr("Proche ajouté");
       if (kind === "child_minor" || kind === "child_deceased") {
         const type: UserRelationshipType =
           me.gender === "female" ? "MOTHER_OF" : me.gender === "male" ? "FATHER_OF" : "PARENT_OF";
@@ -134,12 +135,12 @@ export function AddRelativeSheet({ me, people, meId, onClose, onDone }: Props) {
         message = res.message;
       }
 
-      toast.success(`${firstName.trim()} ajouté·e`, { description: message });
+      toast.success(tr("{name} ajouté·e", { name: firstName.trim() }), { description: message });
       onDone();
       onClose();
     } catch (e) {
       toast.error(e instanceof ApiError ? e.message : "Ajout impossible", {
-        description: "Si le profil a été créé mais pas le lien, réessaie depuis l'arbre.",
+        description: tr("Si le profil a été créé mais pas le lien, réessaie depuis l'arbre."),
       });
     } finally {
       setBusy(false);
@@ -157,12 +158,12 @@ export function AddRelativeSheet({ me, people, meId, onClose, onDone }: Props) {
       >
         <div className="flex shrink-0 items-center justify-between px-5 pb-3 pt-4">
           <h2 className="font-display text-xl text-foreground">
-            {kind ? KINDS.find((k) => k.id === kind)?.label : "Enrichir mon arbre"}
+            {kind ? tr(KINDS.find((k) => k.id === kind)?.label ?? "") : tr("Enrichir mon arbre")}
           </h2>
           <button
             type="button"
             onClick={onClose}
-            aria-label="Fermer"
+            aria-label={tr("Fermer")}
             className="flex h-8 w-8 items-center justify-center rounded-full bg-muted text-muted-foreground"
           >
             <X className="h-4 w-4" />
@@ -172,7 +173,7 @@ export function AddRelativeSheet({ me, people, meId, onClose, onDone }: Props) {
         <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 pb-[max(1.5rem,env(safe-area-inset-bottom,0px))]">
         {!kind && (
           <div className="space-y-2">
-            <p className="text-xs text-muted-foreground">Qui veux-tu ajouter ?</p>
+            <p className="text-xs text-muted-foreground">{tr("Qui veux-tu ajouter ?")}</p>
             {KINDS.map((k) => (
               <button
                 key={k.id}
@@ -184,8 +185,8 @@ export function AddRelativeSheet({ me, people, meId, onClose, onDone }: Props) {
                   <k.icon className="h-5 w-5" />
                 </span>
                 <span>
-                  <span className="block text-sm font-semibold text-foreground">{k.label}</span>
-                  <span className="block text-xs text-muted-foreground">{k.hint}</span>
+                  <span className="block text-sm font-semibold text-foreground">{tr(k.label)}</span>
+                  <span className="block text-xs text-muted-foreground">{tr(k.hint)}</span>
                 </span>
               </button>
             ))}
@@ -196,7 +197,7 @@ export function AddRelativeSheet({ me, people, meId, onClose, onDone }: Props) {
           <div className="space-y-3">
             {kind === "grandparent_deceased" && (
               <div>
-                <p className="mb-1 text-xs text-muted-foreground">Parent de ton côté</p>
+                <p className="mb-1 text-xs text-muted-foreground">{tr("Parent de ton côté")}</p>
                 <div className="grid grid-cols-2 gap-2">
                   {(["father", "mother"] as const).map((s) => (
                     <button
@@ -207,22 +208,22 @@ export function AddRelativeSheet({ me, people, meId, onClose, onDone }: Props) {
                         side === s ? "border-primary bg-primary/10 text-primary" : "border-border bg-card"
                       }`}
                     >
-                      {s === "father" ? "Côté de mon père" : "Côté de ma mère"}
+                      {s === "father" ? tr("Côté de mon père") : tr("Côté de ma mère")}
                     </button>
                   ))}
                 </div>
                 {side === "father" && !fatherId && (
-                  <p className="mt-1 text-[11px] text-destructive">Ton père n'est pas encore dans l'arbre.</p>
+                  <p className="mt-1 text-[11px] text-destructive">{tr("Ton père n'est pas encore dans l'arbre.")}</p>
                 )}
                 {side === "mother" && !motherId && (
-                  <p className="mt-1 text-[11px] text-destructive">Ta mère n'est pas encore dans l'arbre.</p>
+                  <p className="mt-1 text-[11px] text-destructive">{tr("Ta mère n'est pas encore dans l'arbre.")}</p>
                 )}
               </div>
             )}
 
             <div className="grid grid-cols-2 gap-2">
-              <input className={input} value={firstName} onChange={(e) => setFirstName(e.target.value)} placeholder="Prénom" />
-              <input className={input} value={lastName} onChange={(e) => setLastName(e.target.value)} placeholder="Nom" />
+              <input className={input} value={firstName} onChange={(e) => setFirstName(e.target.value)} placeholder={tr("Prénom")} />
+              <input className={input} value={lastName} onChange={(e) => setLastName(e.target.value)} placeholder={tr("Nom")} />
             </div>
 
             <div className="grid grid-cols-2 gap-2">
@@ -241,8 +242,7 @@ export function AddRelativeSheet({ me, people, meId, onClose, onDone }: Props) {
             </div>
 
             <div>
-              <p className="mb-1 text-xs text-muted-foreground">
-                Date de naissance{kind === "child_minor" ? "" : " (si connue)"}
+              <p className="mb-1 text-xs text-muted-foreground">{tr("Date de naissance")}{kind === "child_minor" ? "" : tr(" (si connue)")}
               </p>
               <input
                 type="date"
@@ -256,7 +256,7 @@ export function AddRelativeSheet({ me, people, meId, onClose, onDone }: Props) {
 
             {isDeceased && (
               <div>
-                <p className="mb-1 text-xs text-muted-foreground">Date de décès (si connue)</p>
+                <p className="mb-1 text-xs text-muted-foreground">{tr("Date de décès (si connue)")}</p>
                 <input
                   type="date"
                   className={input}
@@ -271,7 +271,7 @@ export function AddRelativeSheet({ me, people, meId, onClose, onDone }: Props) {
               className={input}
               value={village}
               onChange={(e) => setVillage(e.target.value)}
-              placeholder="Village ou ville d'origine (facultatif)"
+              placeholder={tr("Village ou ville d'origine (facultatif)")}
             />
 
             <button
@@ -282,18 +282,17 @@ export function AddRelativeSheet({ me, people, meId, onClose, onDone }: Props) {
             >
               {busy ? (
                 <>
-                  <Loader2 className="h-4 w-4 animate-spin" /> Ajout…
+                  <Loader2 className="h-4 w-4 animate-spin" />{tr("Ajout…")}
                 </>
               ) : (
-                "Ajouter à mon arbre"
+                tr("Ajouter à mon arbre")
               )}
             </button>
             <button
               type="button"
               onClick={() => setKind(null)}
               className="block w-full text-center text-xs text-muted-foreground underline underline-offset-2"
-            >
-              Changer de type
+            >{tr("Changer de type")}
             </button>
           </div>
         )}

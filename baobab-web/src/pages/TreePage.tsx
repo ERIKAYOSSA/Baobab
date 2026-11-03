@@ -5,7 +5,7 @@ import { PersonPanel } from "../components/tree/PersonPanel";
 import { AddRelativeSheet } from "../components/tree/AddRelativeSheet";
 import { toast } from "sonner";
 import { SAMPLE_PEOPLE, type Person } from "../components/tree/types";
-import { useI18n } from "../lib/i18n/I18nProvider";
+import { useI18n, tr } from "../lib/i18n/I18nProvider";
 import { useAuth } from "../lib/auth/AuthProvider";
 import { getFamilyTree, mapFamilyTreeToPeople } from "../lib/api";
 
@@ -80,7 +80,7 @@ export function TreePage() {
 
   const openAdd = () => {
     if (useMocks || !isAuthenticated || !person) {
-      toast.error("Connecte-toi pour enrichir ton arbre");
+      toast.error(tr("Connecte-toi pour enrichir ton arbre"));
       return;
     }
     setAddOpen(true);
@@ -109,7 +109,7 @@ export function TreePage() {
           </button>
         </div>
         <div className="mt-2 flex items-center gap-3">
-          <span className="text-[11px] font-medium text-muted-foreground">N-5</span>
+          <span className="text-[11px] font-medium text-muted-foreground">{tr("N-5")}</span>
           <div className="relative flex-1">
             <input
               type="range"
@@ -118,12 +118,12 @@ export function TreePage() {
               step={1}
               value={depth}
               onChange={(e) => setDepth(Number(e.target.value))}
-              aria-label="Profondeur de l’arbre"
+              aria-label={tr("Profondeur de l’arbre")}
               className="h-1 w-full cursor-pointer appearance-none rounded-full bg-muted accent-primary"
             />
             <span className="pointer-events-none absolute top-1/2 left-1/2 h-2 w-2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-muted-foreground/40" />
           </div>
-          <span className="text-[11px] font-medium text-muted-foreground">N+5</span>
+          <span className="text-[11px] font-medium text-muted-foreground">{tr("N+5")}</span>
           <span className="flex min-w-[2.5rem] items-center justify-center rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-semibold text-primary">
             {depthLabel}
           </span>
@@ -137,7 +137,7 @@ export function TreePage() {
       <div className="bg-grain pt-4 pb-4">
         {loading && (
           <div className="flex items-center justify-center gap-2 py-10 text-sm text-muted-foreground">
-            <Loader2 className="h-4 w-4 animate-spin" /> Chargement de l’arbre…
+            <Loader2 className="h-4 w-4 animate-spin" />{tr("Chargement de l’arbre…")}
           </div>
         )}
         {error && !loading && (
@@ -154,8 +154,7 @@ export function TreePage() {
           />
         )}
         {!loading && !selected && (
-          <p className="px-6 pb-2 text-center text-[11px] text-muted-foreground">
-            Touche une pastille pour ouvrir la fiche de la personne.
+          <p className="px-6 pb-2 text-center text-[11px] text-muted-foreground">{tr("Touche une pastille pour ouvrir la fiche de la personne.")}
           </p>
         )}
       </div>
@@ -183,13 +182,13 @@ function Legend() {
   return (
     <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-[10px] text-muted-foreground">
       <span className="inline-flex items-center gap-1">
-        <span className="h-2 w-2 rounded-full bg-primary" /> Vérifié
+        <span className="h-2 w-2 rounded-full bg-primary" />{tr("Vérifié")}
       </span>
       <span className="inline-flex items-center gap-1">
-        <span className="h-2 w-2 rounded-full bg-muted-foreground/40" /> Non vérifié
+        <span className="h-2 w-2 rounded-full bg-muted-foreground/40" />{tr("Non vérifié")}
       </span>
       <span className="inline-flex items-center gap-1">
-        <span className="h-2 w-2 rounded-full bg-accent" /> Décédé
+        <span className="h-2 w-2 rounded-full bg-accent" />{tr("Décédé")}
       </span>
     </div>
   );

@@ -1,5 +1,6 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import { Fragment, createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { LOCALES, TRANSLATIONS, type Locale } from "./translations";
+import { EN_PHRASES } from "./phrases_en";
 
 const STORAGE_KEY = "baobab.locale";
 
@@ -10,6 +11,19 @@ type Ctx = {
 };
 
 const I18nContext = createContext<Ctx | null>(null);
+
+// Langue courante, lue par tr() au moment du rendu (mise à jour par le Provider).
+let currentLocale: Locale = "fr";
+
+/**
+ * Traduit un texte écrit en français : en anglais, renvoie la version de EN_PHRASES ;
+ * dans les autres langues (ou si la phrase n'est pas encore traduite), renvoie le français.
+ * Les variables s'écrivent {nom} : tr("Bonjour {nom}", { nom: "Awa" }).
+ */
+export function tr(fr: string, vars?: Record<string, string | number>): string {
+  const text = currentLocale === "en" ? (EN_PHRASES[fr] ?? fr) : fr;
+  return vars ? format(text, vars) : text;
+}
 
 function isLocale(v: string | null): v is Locale {
   return !!v && (LOCALES as readonly string[]).includes(v);
@@ -64,8 +78,14 @@ export function I18nProvider({ children }: { children: React.ReactNode }) {
     [locale],
   );
 
+  currentLocale = locale;
   const value = useMemo(() => ({ locale, setLocale, t }), [locale, setLocale, t]);
-  return <I18nContext.Provider value={value}>{children}</I18nContext.Provider>;
+  // key={locale} : toute l'interface se redessine quand la langue change.
+  return (
+    <I18nContext.Provider value={value}>
+      <Fragment key={locale}>{children}</Fragment>
+    </I18nContext.Provider>
+  );
 }
 
 export function useI18n() {

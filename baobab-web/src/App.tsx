@@ -3,7 +3,7 @@ import { I18nProvider } from "./lib/i18n/I18nProvider";
 import { AuthProvider } from "./lib/auth/AuthProvider";
 import { Toaster } from "./components/ui/sonner";
 import { TabsLayout } from "./layouts/TabsLayout";
-import { LandingPage } from "./pages/LandingPage";
+import { LandingPage } from "./pages/LandingPage ";
 import { OnboardingPage } from "./pages/OnboardingPage";
 import { TreePage } from "./pages/TreePage";
 import { DiscoverPage } from "./pages/DiscoverPage";

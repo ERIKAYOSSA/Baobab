@@ -7,6 +7,7 @@ import { useAuth } from "../lib/auth/AuthProvider";
 import { ApiError, sendOtp, verifyOtp } from "../lib/api";
 import { buildE164, countryByDial, detectDefaultDial, DIAL_COUNTRIES } from "../lib/phoneCountries";
 
+import { tr } from "../lib/i18n/I18nProvider";
 export function LoginPage() {
   const navigate = useNavigate();
   const { useMocks, setSession, isAuthenticated } = useAuth();
@@ -84,8 +85,8 @@ export function LoginPage() {
 
     const national = nationalNumber.replace(/\D/g, "");
     if (national.length < 6) {
-      toast.error("Indique un numéro valide", {
-        description: `Ex. ${selectedCountry.flag} +${dialCode} 6XX XXX XXX`,
+      toast.error(tr("Indique un numéro valide"), {
+        description: tr("Ex. {flag} +{dial} 6XX XXX XXX", { flag: selectedCountry.flag, dial: dialCode }),
       });
       return;
     }
@@ -97,8 +98,8 @@ export function LoginPage() {
       if (!otpSent) {
         const res = await sendOtp(phone);
         setOtpSent(true);
-        toast.success("Code envoyé", {
-          description: res.data.devCode ? `Mode dev — code : ${res.data.devCode}` : "Vérifie tes SMS.",
+        toast.success(tr("Code envoyé"), {
+          description: res.data.devCode ? tr("Mode dev — code : {code}", { code: res.data.devCode }) : tr("Vérifie tes SMS."),
         });
         window.setTimeout(() => focusOtp(0), 50);
         return;
@@ -106,11 +107,11 @@ export function LoginPage() {
 
       // Étape 2 : vérifier le code (+ PIN si demandé)
       if (code.length < 6) {
-        toast.error("Entre les 6 chiffres du code");
+        toast.error(tr("Entre les 6 chiffres du code"));
         return;
       }
       if (pinRequired && pin.length < 4) {
-        toast.error("Entre ton PIN (4 chiffres minimum)");
+        toast.error(tr("Entre ton PIN (4 chiffres minimum)"));
         return;
       }
 
@@ -119,35 +120,35 @@ export function LoginPage() {
 
       if ("signupRequired" in data && data.signupRequired) {
         setNotRegistered(true);
-        toast.error("Aucun compte avec ce numéro", {
-          description: "Crée ton compte pour rejoindre ta famille.",
+        toast.error(tr("Aucun compte avec ce numéro"), {
+          description: tr("Crée ton compte pour rejoindre ta famille."),
         });
         return;
       }
 
       if ("pinRequired" in data && data.pinRequired && !("token" in data)) {
         setPinRequired(true);
-        toast.message("PIN requis", { description: "Entre le PIN de ton compte." });
+        toast.message(tr("PIN requis"), { description: tr("Entre le PIN de ton compte.") });
         return;
       }
 
       if ("token" in data && data.token) {
         setSession(data.token, data.person, data.refreshToken);
-        toast.success("Connexion réussie");
+        toast.success(tr("Connexion réussie"));
         navigate("/tree", { replace: true });
       }
     } catch (e) {
-      toast.error(e instanceof ApiError ? e.message : "Connexion impossible. Vérifie que l'API est lancée.");
+      toast.error(e instanceof ApiError ? e.message : tr("Connexion impossible. Vérifie que l'API est lancée."));
     } finally {
       setBusy(false);
     }
   };
 
   const buttonLabel = !otpSent
-    ? "Recevoir le code"
+    ? tr("Recevoir le code")
     : pinRequired
-      ? "Se connecter"
-      : "Vérifier le code";
+      ? tr("Se connecter")
+      : tr("Vérifier le code");
 
   return (
     <div translate="no" className="relative min-h-dvh overflow-hidden bg-background bg-grain">
@@ -157,7 +158,7 @@ export function LoginPage() {
             type="button"
             onClick={() => navigate("/")}
             className="flex h-11 w-11 items-center justify-center rounded-full bg-card ring-1 ring-border"
-            aria-label="Retour"
+            aria-label={tr("Retour")}
           >
             <ChevronLeft className="h-4 w-4" />
           </button>
@@ -168,16 +169,15 @@ export function LoginPage() {
             <div className="mb-4 flex h-24 w-24 items-center justify-center overflow-hidden rounded-full bg-[#f3ebe0] ring-1 ring-border">
               <BaobabLogo size={96} />
             </div>
-            <h1 className="font-display text-3xl text-foreground">Content de te revoir</h1>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Connecte-toi avec le numéro de ton compte Baobab.
+            <h1 className="font-display text-3xl text-foreground">{tr("Content de te revoir")}</h1>
+            <p className="mt-1 text-sm text-muted-foreground">{tr("Connecte-toi avec le numéro de ton compte Baobab.")}
             </p>
           </div>
 
           <div className="space-y-3">
             <div className="flex gap-2">
               <label className="relative shrink-0">
-                <span className="sr-only">Indicatif pays</span>
+                <span className="sr-only">{tr("Indicatif pays")}</span>
                 <div className="pointer-events-none absolute inset-y-0 right-2 flex items-center text-muted-foreground">
                   <ChevronDown className="h-3.5 w-3.5" />
                 </div>
@@ -188,7 +188,7 @@ export function LoginPage() {
                     resetOtp();
                   }}
                   className="h-12 appearance-none rounded-2xl border border-border bg-card py-0 pl-3 pr-8 text-sm font-medium outline-none focus:border-primary"
-                  aria-label="Indicatif pays"
+                  aria-label={tr("Indicatif pays")}
                 >
                   {DIAL_COUNTRIES.map((c) => (
                     <option key={`${c.iso}-${c.dial}`} value={c.dial}>
@@ -203,7 +203,7 @@ export function LoginPage() {
                   setNationalNumber(e.target.value.replace(/\D/g, "").slice(0, 12));
                   resetOtp();
                 }}
-                placeholder="6XX XXX XXX"
+                placeholder={tr("6XX XXX XXX")}
                 inputMode="tel"
                 autoComplete="tel-national"
                 className="h-12 min-w-0 flex-1 rounded-2xl border border-border bg-card px-4 text-base outline-none focus:border-primary"
@@ -212,7 +212,7 @@ export function LoginPage() {
 
             {otpSent && (
               <div className="pt-2">
-                <p className="mb-1 text-xs text-muted-foreground">Code reçu par SMS (6 chiffres)</p>
+                <p className="mb-1 text-xs text-muted-foreground">{tr("Code reçu par SMS (6 chiffres)")}</p>
                 <div className="flex justify-center gap-1.5">
                   {[0, 1, 2, 3, 4, 5].map((i) => (
                     <input
@@ -240,7 +240,7 @@ export function LoginPage() {
 
             {pinRequired && (
               <div className="pt-1">
-                <p className="mb-1 text-xs text-muted-foreground">PIN du compte</p>
+                <p className="mb-1 text-xs text-muted-foreground">{tr("PIN du compte")}</p>
                 <input
                   type="password"
                   inputMode="numeric"
@@ -254,9 +254,8 @@ export function LoginPage() {
 
             {notRegistered && (
               <div className="rounded-2xl border border-border bg-card px-4 py-3 text-sm">
-                <p className="text-foreground">Ce numéro n'a pas encore de compte.</p>
-                <Link to="/onboarding" className="mt-1 inline-block font-semibold text-primary">
-                  Créer mon compte →
+                <p className="text-foreground">{tr("Ce numéro n'a pas encore de compte.")}</p>
+                <Link to="/onboarding" className="mt-1 inline-block font-semibold text-primary">{tr("Créer mon compte →")}
                 </Link>
               </div>
             )}
@@ -272,7 +271,7 @@ export function LoginPage() {
           >
             {busy ? (
               <>
-                <Loader2 className="h-4 w-4 animate-spin" /> Patiente…
+                <Loader2 className="h-4 w-4 animate-spin" />{tr("Patiente…")}
               </>
             ) : (
               <>
@@ -287,14 +286,11 @@ export function LoginPage() {
               type="button"
               onClick={resetOtp}
               className="block w-full text-center text-xs text-muted-foreground underline underline-offset-2"
-            >
-              Changer de numéro / renvoyer le code
+            >{tr("Changer de numéro / renvoyer le code")}
             </button>
           )}
-          <p className="text-center text-sm text-muted-foreground">
-            Pas encore de compte ?{" "}
-            <Link to="/onboarding" className="font-semibold text-primary">
-              Créer mon arbre
+          <p className="text-center text-sm text-muted-foreground">{tr("Pas encore de compte ?")}{" "}
+            <Link to="/onboarding" className="font-semibold text-primary">{tr("Créer mon arbre")}
             </Link>
           </p>
         </div>
