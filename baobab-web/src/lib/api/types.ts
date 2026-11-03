@@ -122,13 +122,28 @@ export type VerifyOtpResult =
       pinRequired?: boolean;
     };
 
+export type NotificationPerson = {
+  id: string;
+  firstName: string;
+  lastName: string;
+  village?: string | null;
+  birthCity?: string | null;
+  birthCountry?: string | null;
+  ethnicity?: string | null;
+  photoUrl?: string | null;
+};
+
 export type NotificationsPayload = {
   pendingApprovals: Array<{
     type: "approval_required";
     requestId: string;
     requestType: string;
-    requester: Record<string, unknown>;
-    createdAt: unknown;
+    /** Qui a fait la demande. */
+    requester: NotificationPerson | null;
+    /** Le lien demandé : « from » est <type> de « to ». */
+    from: NotificationPerson | null;
+    to: NotificationPerson | null;
+    createdAt: string | null;
   }>;
   myRequests: Array<{
     type: "my_request";
@@ -137,10 +152,21 @@ export type NotificationsPayload = {
     relationshipType: string;
     fromPersonId: string;
     toPersonId: string;
+    from: NotificationPerson | null;
+    to: NotificationPerson | null;
     pendingVotes: number;
     approvedVotes: number;
     totalVotes: number;
-    createdAt: unknown;
+    /** Réponses des membres à qui la demande a été soumise. */
+    votes: Array<{
+      id: string;
+      firstName: string;
+      lastName: string;
+      status: "pending" | "approved" | "rejected" | string;
+      decidedAt: string | null;
+    }>;
+    decidedAt: string | null;
+    createdAt: string | null;
   }>;
   summary: {
     pendingApprovalsCount: number;
