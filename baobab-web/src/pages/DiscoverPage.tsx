@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import {
   Search,
   Mic,
@@ -17,12 +18,13 @@ import { useAuth } from "../lib/auth/AuthProvider";
 import {
   ApiError,
   getDiscover,
-  mapUiRelation,
   proposeLink,
   searchPersons,
   type ApiPerson,
   type DiscoverItem,
   type DiscoverResult,
+  type ProposeDirection,
+  type UserRelationshipType,
 } from "../lib/api";
 
 import { tr } from "../lib/i18n/I18nProvider";
@@ -50,8 +52,107 @@ function reasonsText(codes: string[]): string {
   return codes.map((c) => labels[c]).filter(Boolean).join(" · ");
 }
 
+type LinkChoice = { key: string; label: string; type: UserRelationshipType; direction: ProposeDirection };
+
+/** Liens qu'on peut déclarer. Cousins, oncles et tantes se déduisent des liens parent / frère-sœur. */
+function linkChoices(myGender?: string | null): LinkChoice[] {
+  const childType: UserRelationshipType =
+    myGender === "female" ? "MOTHER_OF" : myGender === "male" ? "FATHER_OF" : "PARENT_OF";
+  return [
+    { key: "father", label: "C'est mon père", type: "FATHER_OF", direction: "parent_of_requester" },
+    { key: "mother", label: "C'est ma mère", type: "MOTHER_OF", direction: "parent_of_requester" },
+    { key: "sibling", label: "C'est mon frère ou ma sœur", type: "SIBLING_OF", direction: "peer" },
+    { key: "child", label: "C'est mon enfant", type: childType, direction: "requester_is_parent" },
+    { key: "spouse", label: "C'est mon conjoint / ma conjointe", type: "MARRIED_TO", direction: "peer" },
+  ];
+}
+
+/** Message compréhensible à partir de la réponse de l'API. */
+function friendlyError(e: unknown): string {
+  if (e instanceof ApiError) {
+    if (e.message === "A pending request already exists") return tr("Une demande est déjà en attente pour cette personne.");
+    if (e.message === "Relationship already exists") return tr("Ce lien existe déjà.");
+    if (e.message === "Relationship conflicts detected")
+      return tr("Ce lien est incompatible avec les liens déjà présents dans l'arbre.");
+    if (e.status === 404) return tr("Cette personne est introuvable.");
+    if (e.status >= 400 && e.status < 500) return e.message;
+  }
+  return tr("Impossible d'envoyer la demande. Vérifie ta connexion et réessaie.");
+}
+
+function LinkSheet({
+  target,
+  myGender,
+  sending,
+  onSend,
+  onClose,
+}: {
+  target: { firstName: string; lastName: string };
+  myGender?: string | null;
+  sending: boolean;
+  onSend: (choice: LinkChoice) => void;
+  onClose: () => void;
+}) {
+  const [picked, setPicked] = useState<string>("");
+  const choices = linkChoices(myGender);
+  const chosen = choices.find((c) => c.key === picked);
+  return createPortal(
+    <div translate="no" className="fixed inset-0 z-[100] flex items-end justify-center bg-black/40" onClick={sending ? undefined : onClose}>
+      <div
+        className="w-full max-w-md rounded-t-3xl border border-border bg-background px-5 pb-[max(1.5rem,env(safe-area-inset-bottom,0px))] pt-5 shadow-xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <h2 className="font-display text-lg text-foreground">
+          {tr("Quel est ton lien avec {name} ?", { name: `${target.firstName} ${target.lastName}` })}
+        </h2>
+        <div className="mt-3 space-y-2">
+          {choices.map((c) => (
+            <button
+              key={c.key}
+              type="button"
+              disabled={sending}
+              onClick={() => setPicked(c.key)}
+              className={`min-h-11 w-full rounded-xl border px-4 text-left text-sm font-medium ${
+                picked === c.key ? "border-primary bg-primary/10 text-primary" : "border-border bg-card"
+              }`}
+            >
+              {tr(c.label)}
+            </button>
+          ))}
+        </div>
+        <p className="mt-3 text-[11px] text-muted-foreground">
+          {tr("Les cousins, oncles et tantes se déduisent automatiquement à partir des liens parent, enfant et frère/sœur.")}
+        </p>
+        <button
+          type="button"
+          disabled={!chosen || sending}
+          onClick={() => chosen && onSend(chosen)}
+          className="mt-4 flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-primary font-semibold text-primary-foreground disabled:opacity-50"
+        >
+          {sending ? (
+            <>
+              <Loader2 className="h-4 w-4 animate-spin" /> {tr("Envoi…")}
+            </>
+          ) : (
+            tr("Envoyer la demande")
+          )}
+        </button>
+        <button
+          type="button"
+          disabled={sending}
+          onClick={onClose}
+          className="mt-2 block w-full text-center text-xs text-muted-foreground underline underline-offset-2"
+        >
+          {tr("Annuler")}
+        </button>
+      </div>
+    </div>,
+    document.body,
+  );
+}
+
 export function DiscoverPage() {
-  const { useMocks, isAuthenticated } = useAuth();
+  const { useMocks, isAuthenticated, person: me } = useAuth();
   const [nameQuery, setNameQuery] = useState("");
   const [country, setCountry] = useState("");
   const [ethnicity, setEthnicity] = useState("");
@@ -61,6 +162,8 @@ export function DiscoverPage() {
   const [discover, setDiscover] = useState<DiscoverResult | null>(null);
   const [discoverLoading, setDiscoverLoading] = useState(false);
   const [dismissed, setDismissed] = useState<Set<string>>(new Set());
+  const [linkTarget, setLinkTarget] = useState<{ id: string; firstName: string; lastName: string } | null>(null);
+  const [sending, setSending] = useState(false);
 
   const runSearch = async () => {
     const q = nameQuery.trim() || country.trim() || ethnicity.trim();
@@ -93,33 +196,38 @@ export function DiscoverPage() {
     }
   };
 
-  const onPropose = async (person: { id: string; firstName: string; lastName: string }) => {
+  // « Proposer un lien » ouvre d'abord le choix du lien.
+  const onPropose = (person: { id: string; firstName: string; lastName: string }) => {
     if (!isAuthenticated) {
       toast.error(tr("Connecte-toi pour proposer un lien"));
       return;
     }
-    const mapped = mapUiRelation("Cousin·e");
-    if (!mapped) return;
+    setLinkTarget(person);
+  };
+
+  const sendProposal = async (choice: LinkChoice) => {
+    if (!linkTarget || sending) return; // évite les envois en double
+    setSending(true);
     try {
-      await proposeLink({
-        type: mapped.type,
-        targetPersonId: person.id,
-        direction: mapped.direction,
-      });
+      await proposeLink({ type: choice.type, targetPersonId: linkTarget.id, direction: choice.direction });
       toast.success(tr("Demande envoyée"), {
-        description: `${person.firstName} ${person.lastName}`,
+        description: `${linkTarget.firstName} ${linkTarget.lastName} · ${tr(choice.label)}`,
       });
+      const sentId = linkTarget.id;
       setDiscover((d) =>
         d
           ? {
               ...d,
-              suggestions: d.suggestions.filter((i) => i.id !== person.id),
-              potentialLinks: d.potentialLinks.filter((i) => i.id !== person.id),
+              suggestions: d.suggestions.filter((i) => i.id !== sentId),
+              potentialLinks: d.potentialLinks.filter((i) => i.id !== sentId),
             }
           : d,
       );
+      setLinkTarget(null);
     } catch (e) {
-      toast.error(e instanceof ApiError ? e.message : tr("Échec de la demande"));
+      toast.error(friendlyError(e), { duration: 6000 });
+    } finally {
+      setSending(false);
     }
   };
 
@@ -244,7 +352,7 @@ export function DiscoverPage() {
                     </p>
                   </div>
                   <button
-                    onClick={() => void onPropose(p)}
+                    onClick={() => onPropose(p)}
                     className="rounded-lg bg-primary/10 px-3 py-1.5 text-xs font-medium text-primary"
                   >{tr("Proposer un lien")}
                   </button>
@@ -288,7 +396,7 @@ export function DiscoverPage() {
                       <p className="mb-2 text-xs text-muted-foreground">{reasonsText(m.reasons)}</p>
                       <div className="flex gap-1.5">
                         <button
-                          onClick={() => void onPropose(m)}
+                          onClick={() => onPropose(m)}
                           className="flex-1 rounded-lg bg-primary px-2 py-1.5 text-xs font-medium text-primary-foreground"
                         >
                           {tr("Proposer un lien")}
@@ -332,7 +440,7 @@ export function DiscoverPage() {
                         </p>
                       </div>
                       <button
-                        onClick={() => void onPropose(m)}
+                        onClick={() => onPropose(m)}
                         className="shrink-0 rounded-lg bg-primary/10 px-3 py-1.5 text-xs font-medium text-primary"
                       >
                         {tr("Proposer un lien")}
@@ -429,6 +537,15 @@ export function DiscoverPage() {
       >
         <HelpCircle className="h-6 w-6" />
       </button>
+      {linkTarget && (
+        <LinkSheet
+          target={linkTarget}
+          myGender={me?.gender}
+          sending={sending}
+          onSend={(c) => void sendProposal(c)}
+          onClose={() => setLinkTarget(null)}
+        />
+      )}
     </div>
   );
 }

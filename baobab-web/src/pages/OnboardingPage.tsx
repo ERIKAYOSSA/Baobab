@@ -511,7 +511,7 @@ export function OnboardingPage() {
       if (facialEnrollment) saveFacialEnrollment(facialEnrollment);
 
       if (knowsRelative === true && chosenRelative && relation) {
-        const mapped = mapUiRelation(relation);
+        const mapped = mapUiRelation(relation, gender === "f" ? "female" : gender === "m" ? "male" : null);
         const target = relativesList.find((p) => p.id === chosenRelative);
         if (mapped && target) {
           try {
@@ -1081,7 +1081,7 @@ export function OnboardingPage() {
                   <div>
                     <p className="mb-1.5 text-xs text-muted-foreground">{tr("Quel est ton lien ?")}</p>
                     <div className="flex flex-wrap gap-2">
-                      {["Père", "Mère", "Frère", "Sœur", "Oncle", "Tante", "Cousin·e"].map((r) => (
+                      {["Père", "Mère", "Frère", "Sœur", "Enfant", "Conjoint·e"].map((r) => (
                         <button
                           key={r}
                           onClick={() => setRelation(r)}
@@ -1093,6 +1093,9 @@ export function OnboardingPage() {
                         </button>
                       ))}
                     </div>
+                    <p className="mt-2 text-[11px] text-muted-foreground">
+                      {tr("Les cousins, oncles et tantes se déduisent automatiquement à partir des liens parent, enfant et frère/sœur.")}
+                    </p>
                   </div>
                 )}
                 {liveRequest && <StatusCard request={liveRequest} />}
