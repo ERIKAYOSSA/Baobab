@@ -13,17 +13,17 @@ import {
   Loader2,
 } from "lucide-react";
 import { toast } from "sonner";
-import { useLinkRequests, resolveLinkRequest, statusLabel, type LinkStatus } from "@/lib/linkRequests";
-import { useAuth } from "@/lib/auth/AuthProvider";
+import { useLinkRequests, resolveLinkRequest, statusLabel, type LinkStatus } from "../lib/linkRequests";
+import { useAuth } from "../lib/auth/AuthProvider";
 import {
   ApiError,
   decideRequest,
   getNotifications,
   type NotificationPerson,
   type NotificationsPayload,
-} from "@/lib/api";
+} from "../lib/api";
 
-import { tr } from "@/lib/i18n/I18nProvider";
+import { tr } from "../lib/i18n/I18nProvider";
 const demoItems = [
   {
     type: "link",
