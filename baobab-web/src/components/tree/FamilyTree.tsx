@@ -31,14 +31,18 @@ export function FamilyTree({
   const ancestorsGen2 = ancestorsGen1.flatMap((p) =>
     p ? [p.fatherId, p.motherId].filter(Boolean).map((id) => byId[id!]) : [],
   );
-  // Frère/sœur = partage un parent CONNU avec moi (on ne compare jamais deux parents absents :
-  // sinon mes enfants, dont un parent est inconnu, seraient pris pour ma fratrie).
+  // Frère/sœur = lien de fratrie déclaré, OU parent CONNU en commun (on ne compare jamais deux
+  // parents absents : sinon mes enfants, dont un parent est inconnu, passeraient pour ma fratrie).
   const siblings = people.filter(
     (p) =>
       p.id !== meId &&
       p.fatherId !== meId &&
       p.motherId !== meId &&
-      ((Boolean(me.fatherId) && p.fatherId === me.fatherId) ||
+      p.id !== me.fatherId &&
+      p.id !== me.motherId &&
+      (Boolean(me.siblingIds?.includes(p.id)) ||
+        Boolean(p.siblingIds?.includes(meId)) ||
+        (Boolean(me.fatherId) && p.fatherId === me.fatherId) ||
         (Boolean(me.motherId) && p.motherId === me.motherId)),
   );
   const meCouple = (me.spouseIds ?? []).map((id) => byId[id]).filter(Boolean);

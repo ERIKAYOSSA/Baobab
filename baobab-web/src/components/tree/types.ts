@@ -22,6 +22,8 @@ export type Person = {
   photoUrl?: string;
   parentIds?: string[];
   spouseIds?: string[];
+  /** Frères et sœurs déclarés directement (lien de fratrie), même sans parent commun connu. */
+  siblingIds?: string[];
   /** Co-épouses (CO_WIFE_OF), distinctes des conjoints. */
   coWifeIds?: string[];
   motherId?: string;
