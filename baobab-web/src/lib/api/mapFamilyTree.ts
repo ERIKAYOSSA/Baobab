@@ -4,6 +4,7 @@ import type { ApiPerson, FamilyTreeEdge, FamilyTreeNode, FamilyTreeResult, Marit
 const PARENT_TYPES = new Set(["PARENT_OF", "FATHER_OF", "MOTHER_OF"]);
 const SPOUSE_TYPES = new Set(["HUSBAND_OF", "WIFE_OF", "MARRIED_TO"]);
 const CO_WIFE_TYPES = new Set(["CO_WIFE_OF"]);
+const SIBLING_TYPES = new Set(["SIBLING_OF", "FULL_SIBLING_OF", "HALF_SIBLING_OF"]);
 
 function yearOf(date?: string | null): string | undefined {
   if (!date) return undefined;
@@ -94,6 +95,12 @@ function mapNode(node: FamilyTreeNode, edges: FamilyTreeEdge[], meId: string): P
       .map((e) => (e.fromPersonId === id ? e.toPersonId : e.fromPersonId)),
   );
 
+  const siblingIds = uniqueIds(
+    edges
+      .filter((e) => SIBLING_TYPES.has(e.type) && (e.fromPersonId === id || e.toPersonId === id))
+      .map((e) => (e.fromPersonId === id ? e.toPersonId : e.fromPersonId)),
+  );
+
   const birth = yearOf(node.birthDate);
   const death = yearOf(node.deathDate);
   const profile = mapProfileFields(node);
@@ -112,6 +119,7 @@ function mapNode(node: FamilyTreeNode, edges: FamilyTreeEdge[], meId: string): P
     motherId,
     spouseIds: spouseIds.length ? spouseIds : undefined,
     coWifeIds: coWifeIds.length ? coWifeIds : undefined,
+    siblingIds: siblingIds.length ? siblingIds : undefined,
     ...profile,
     maritalStatus: profile.maritalStatus ?? (spouseIds.length ? "married" : undefined),
   };
