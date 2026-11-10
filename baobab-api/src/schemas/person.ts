@@ -61,6 +61,8 @@ const personFieldsSchema = z
     village: z.string().max(120).optional(),
     phone: phoneSchema.optional(),
     phoneVerifiedToken: z.string().optional(),
+    /** Numéro d'un proche vivant ajouté sans compte : il récupère son profil en s'inscrivant avec. */
+    claimPhone: phoneSchema.optional(),
     /** Deceased relatives have a profile but cannot sign in. */
     vitalStatus: z.enum(["deceased"]).optional()
   })
@@ -74,10 +76,18 @@ export const createPersonSchema = personFieldsSchema
   .refine((data) => data.vitalStatus !== "deceased" || !data.phone, {
     message: "A deceased profile cannot have a phone login",
     path: ["phone"]
+  })
+  .refine((data) => !data.claimPhone || !data.phone, {
+    message: "Use either phone (own account) or claimPhone (relative), not both",
+    path: ["claimPhone"]
+  })
+  .refine((data) => !data.claimPhone || data.vitalStatus !== "deceased", {
+    message: "A deceased profile cannot be claimed",
+    path: ["claimPhone"]
   });
 
 export const updatePersonSchema = personFieldsSchema
-  .omit({ phoneVerifiedToken: true })
+  .omit({ phoneVerifiedToken: true, claimPhone: true })
   .partial()
   .refine((data) => Object.keys(data).length > 0, {
     message: "At least one field must be provided"
@@ -85,7 +95,9 @@ export const updatePersonSchema = personFieldsSchema
 
 export const personSearchQuerySchema = z.object({
   q: z.string().min(1).max(120),
-  limit: z.coerce.number().int().min(1).max(50).optional()
+  limit: z.coerce.number().int().min(1).max(50).optional(),
+  /** "true" : suggestions de saisie — noms qui COMMENCENT par q (fiche allégée). */
+  prefix: z.enum(["true", "false"]).optional()
 });
 
 export type CreatePersonInput = z.infer<typeof personFieldsSchema>;

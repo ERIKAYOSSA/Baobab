@@ -28,6 +28,8 @@ export type Person = {
   coWifeIds?: string[];
   motherId?: string;
   fatherId?: string;
+  createdBy?: string;
+  unclaimed?: boolean;
 };
 
 export const MARITAL_LABELS: Record<MaritalStatus, string> = {

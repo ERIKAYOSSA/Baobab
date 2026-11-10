@@ -33,9 +33,16 @@ export async function searchPersons(q: string, limit = 20) {
   return apiRequest<Ok<ApiPerson[]>>(`/persons/search?${params}`);
 }
 
+/** Suggestions pendant la saisie : membres dont le nom commence par ce qui est tapé. */
+export async function suggestNames(q: string, limit = 6) {
+  const params = new URLSearchParams({ q, limit: String(limit), prefix: "true" });
+  return apiRequest<Ok<ApiPerson[]>>(`/persons/search?${params}`);
+}
+
 export async function getFamilyTree(personId: string, depth = 2) {
   return apiRequest<{ ok: true; personId: string; data: FamilyTreeResult }>(
     `/persons/${personId}/family-tree?depth=${depth}`,
+    { auth: true },
   );
 }
 
@@ -54,6 +61,8 @@ export type CreateRelativeInput = {
   birthDate?: string;
   deathDate?: string;
   village?: string;
+  /** Numéro (format international) d'un proche vivant sans compte : il récupère son profil en s'inscrivant. */
+  claimPhone?: string;
   /** "deceased" pour un proche décédé ; omis pour un enfant mineur vivant. */
   vitalStatus?: "deceased";
 };
@@ -70,4 +79,12 @@ export async function createRelative(input: CreateRelativeInput) {
 /** Membres qui ont activé « Apparaître dans les suggestions » + liens potentiels (connecté). */
 export async function getDiscover() {
   return apiRequest<{ ok: true; data: DiscoverResult }>("/persons/discover", { auth: true });
+}
+
+/** Supprime un proche que j'ai ajouté et qui n'a pas de compte (profil et liens). */
+export async function deleteRelative(personId: string) {
+  return apiRequest<{ ok: true; message: string; personId: string }>(`/persons/${personId}/relative`, {
+    method: "DELETE",
+    auth: true,
+  });
 }

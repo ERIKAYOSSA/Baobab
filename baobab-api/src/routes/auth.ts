@@ -47,7 +47,7 @@ async function issueSession(session: Session, person: Record<string, unknown>) {
     token: accessToken,
     accessToken,
     refreshToken: refresh.token,
-    person: { ...publicPerson(person), hasPin: Boolean(person.pinHash) },
+    person: { ...publicPerson(person, { includePhone: true }), hasPin: Boolean(person.pinHash) },
     pinRequired: Boolean(person.pinHash)
   };
 }
@@ -110,6 +110,26 @@ authRouter.post("/verify-otp", async (req, res) => {
     const result = await session.run(`MATCH (p:Person {phone: $phone}) RETURN p`, { phone });
 
     if (result.records.length === 0) {
+      // Un proche a peut-être déjà créé mon profil avec ce numéro : je le récupère.
+      const pending = await session.run(
+        `
+        MATCH (p:Person {claimPhone: $phone})
+        WHERE coalesce(p.accountStatus, "active") = "unclaimed"
+          AND coalesce(p.vitalStatus, "alive") <> "deceased"
+        SET p.phone = $phone, p.accountStatus = "active", p.claimedAt = datetime()
+        REMOVE p.claimPhone
+        RETURN p
+        LIMIT 1
+        `,
+        { phone }
+      );
+      if (pending.records.length > 0) {
+        const claimed = pending.records[0].get("p").properties as Record<string, unknown>;
+        consumeOtp(phone);
+        const data = await issueSession(session, claimed);
+        return res.json({ ok: true, data: { ...data, claimed: true } });
+      }
+
       consumeOtp(phone);
       const phoneVerifiedToken = signPhoneVerifiedToken(phone);
       return res.json({
@@ -403,7 +423,7 @@ authRouter.get("/me", requireAuth, async (req: AuthenticatedRequest, res) => {
     res.json({
       ok: true,
       data: {
-        person: { ...publicPerson(person), hasPin: Boolean(person.pinHash) },
+        person: { ...publicPerson(person, { includePhone: true }), hasPin: Boolean(person.pinHash) },
         pendingApprovals
       }
     });  } catch (error) {

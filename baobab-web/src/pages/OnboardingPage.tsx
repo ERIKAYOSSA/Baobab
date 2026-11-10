@@ -30,6 +30,7 @@ import {
   mapUiRelation,
   proposeLink,
   searchPersons,
+  suggestNames,
   sendOtp,
   splitFullName,
   verifyOtp,
@@ -87,7 +88,7 @@ function personToRelativeHit(p: ApiPerson): RelativeHit {
   return {
     id: p.id,
     n: `${p.firstName} ${p.lastName}`.trim(),
-    c: [p.village, p.phone].filter(Boolean).join(" · ") || "Membre Baobab",
+    c: [p.village ?? p.birthCity, p.birthCountry].filter(Boolean).join(" · ") || "Membre Baobab",
     tree: 0,
     createdAtMs: createdAtToMs(p.createdAt),
   };
@@ -177,8 +178,6 @@ export function OnboardingPage() {
   const [relation, setRelation] = useState<string>("");
   const [sending, setSending] = useState(false);
   const [requestId, setRequestId] = useState<string | null>(null);
-  const [step15Search, setStep15Search] = useState("");
-  const [step15Chosen, setStep15Chosen] = useState<string | null>(null);
   const [apiRelatives, setApiRelatives] = useState<RelativeHit[]>([]);
   const [suggestedRelatives, setSuggestedRelatives] = useState<RelativeHit[]>([]);
   const [loadingSuggestions, setLoadingSuggestions] = useState(false);
@@ -186,17 +185,25 @@ export function OnboardingPage() {
   const liveRequest = useLinkRequest(requestId);
 
   const total = 6;
-  /** Affichage progression style Lovable (5 jalons UI) — l'étape 2 est l'écran 1.5 */
+  /** Affichage progression (5 jalons UI). L'étape 2 n'existe plus : on passe directement de 1 à 3. */
   const displayTotal = 5;
   const displayStep = step === 1 ? 1 : Math.min(step - 1, displayTotal);
-  const next = () => setStep((s) => Math.min(s + 1, total));
-  const back = () => (step === 1 ? navigate("/") : setStep((s) => s - 1));
+  const SKIPPED_STEP = 2;
+  const next = () =>
+    setStep((s) => {
+      const n = Math.min(s + 1, total);
+      return n === SKIPPED_STEP ? n + 1 : n;
+    });
+  const back = () =>
+    step === 1
+      ? navigate("/")
+      : setStep((s) => (s - 1 === SKIPPED_STEP ? s - 2 : s - 1));
 
   useEffect(() => {
     if (isAuthenticated && !useMocks) navigate("/tree", { replace: true });
   }, [isAuthenticated, useMocks, navigate]);
 
-  const relativeQuery = step === 2 ? step15Search : search;
+  const relativeQuery = search;
   useEffect(() => {
     if (useMocks) return;
     const q = relativeQuery.trim();
@@ -208,7 +215,8 @@ export function OnboardingPage() {
     const t = window.setTimeout(async () => {
       setSearchingRelatives(true);
       try {
-        const res = await searchPersons(q, 12);
+        // Noms qui COMMENCENT par ce qui est tapé (ex. « er » → Eric, Ernest…)
+        const res = await suggestNames(q, 8);
         if (cancelled) return;
         setApiRelatives(res.data.map((p) => personToRelativeHit(p)));
       } catch {
@@ -216,7 +224,7 @@ export function OnboardingPage() {
       } finally {
         if (!cancelled) setSearchingRelatives(false);
       }
-    }, 300);
+    }, 200);
     return () => {
       cancelled = true;
       window.clearTimeout(t);
@@ -427,7 +435,13 @@ export function OnboardingPage() {
       }
       if ("token" in data && data.token) {
         setSession(data.token, data.person, data.refreshToken);
-        toast.success(tr("Connexion réussie"));
+        if (data.claimed) {
+          toast.success(tr("Ton profil t'attendait"), {
+            description: tr("Un proche t'avait ajouté·e. Vérifie tes informations dans ton profil."),
+          });
+        } else {
+          toast.success(tr("Connexion réussie"));
+        }
         navigate("/tree");
       }
     } catch (e) {
@@ -656,70 +670,6 @@ export function OnboardingPage() {
                 />
               </div>
             )}
-          </Step>
-        )}
-
-        {step === 2 && (
-          <Step
-            icon={Search}
-            title={tr("Connais-tu déjà un membre ?")}
-            subtitle={tr("Recherche un proche avant de déclarer tes parents.")}
-          >
-            <div className="flex items-center gap-2 rounded-2xl border border-border bg-card px-3 py-2.5">
-              <Search className="h-4 w-4 text-muted-foreground" />
-              <input
-                value={step15Search}
-                onChange={(e) => setStep15Search(e.target.value)}
-                placeholder={tr("Nom de ton proche…")}
-                className="flex-1 bg-transparent text-sm outline-none"
-              />
-            </div>
-            <ul className="divide-y divide-border rounded-2xl border border-border bg-card">
-              {searchingRelatives && (
-                <li className="flex items-center gap-2 p-3 text-xs text-muted-foreground">
-                  <Loader2 className="h-3.5 w-3.5 animate-spin" />{tr("Recherche…")}
-                </li>
-              )}
-              {(useMocks
-                ? SAMPLE_RELATIVES.filter(
-                    (p) => !step15Search || p.n.toLowerCase().includes(step15Search.toLowerCase()),
-                  )
-                : relativesList
-              ).map((p) => (
-                <li
-                  key={p.id}
-                  onClick={() => setStep15Chosen(p.id)}
-                  className={`flex cursor-pointer items-center gap-3 p-3 ${step15Chosen === p.id ? "bg-primary/5" : ""}`}
-                >
-                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-accent/30 font-display font-semibold">
-                    {p.n
-                      .split(" ")
-                      .map((s) => s[0])
-                      .slice(0, 2)
-                      .join("")}
-                  </div>
-                  <div className="flex-1">
-                    <p className="text-sm font-medium">{p.n}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {p.c}
-                      {p.tree ? tr(" · {n} membres", { n: p.tree }) : ""}
-                    </p>
-                  </div>
-                  {step15Chosen === p.id && <Check className="h-5 w-5 text-primary" />}
-                </li>
-              ))}
-              {!useMocks && !searchingRelatives && step15Search.trim().length >= 2 && relativesList.length === 0 && (
-                <li className="p-3 text-xs text-muted-foreground">{tr("Aucun résultat pour «")}{" "}{step15Search} »</li>
-              )}
-            </ul>
-            <button
-              onClick={() => {
-                setStep15Chosen(null);
-                next();
-              }}
-              className="mt-2 w-full rounded-2xl border border-dashed border-border bg-card py-3 text-sm text-muted-foreground"
-            >{tr("Personne trouvée — continuer")}
-            </button>
           </Step>
         )}
 

@@ -1,4 +1,5 @@
 import { Session } from "neo4j-driver";
+import { publicPerson } from "../middleware/auth";
 
 type PersonNode = Record<string, unknown>;
 
@@ -57,7 +58,8 @@ const SPOUSE_TYPES = new Set(["HUSBAND_OF", "WIFE_OF", "MARRIED_TO", "CO_WIFE_OF
 const COLLATERAL_TYPES = new Set(["SIBLING_OF", "FULL_SIBLING_OF", "HALF_SIBLING_OF", "COUSIN_OF", "CO_WIFE_OF"]);
 
 function mapPerson(node: { properties: Record<string, unknown> } | null): PersonNode | null {
-  return node ? node.properties : null;
+  // Jamais de PIN chiffré ni de jeton dans l'arbre.
+  return node ? publicPerson(node.properties) : null;
 }
 
 function edgeLabel(type: string): string {

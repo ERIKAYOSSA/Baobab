@@ -134,7 +134,13 @@ export function LoginPage() {
 
       if ("token" in data && data.token) {
         setSession(data.token, data.person, data.refreshToken);
-        toast.success(tr("Connexion réussie"));
+        if (data.claimed) {
+          toast.success(tr("Ton profil t'attendait"), {
+            description: tr("Un proche t'avait ajouté·e. Vérifie tes informations dans ton profil."),
+          });
+        } else {
+          toast.success(tr("Connexion réussie"));
+        }
         navigate("/tree", { replace: true });
       }
     } catch (e) {

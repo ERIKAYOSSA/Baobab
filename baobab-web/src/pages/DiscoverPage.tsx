@@ -20,6 +20,7 @@ import {
   getDiscover,
   proposeLink,
   searchPersons,
+  suggestNames,
   type ApiPerson,
   type DiscoverItem,
   type DiscoverResult,
@@ -154,6 +155,8 @@ function LinkSheet({
 export function DiscoverPage() {
   const { useMocks, isAuthenticated, person: me } = useAuth();
   const [nameQuery, setNameQuery] = useState("");
+  const [typeahead, setTypeahead] = useState<ApiPerson[]>([]);
+  const [typeaheadOpen, setTypeaheadOpen] = useState(false);
   const [country, setCountry] = useState("");
   const [ethnicity, setEthnicity] = useState("");
   const [results, setResults] = useState<ApiPerson[]>([]);
@@ -195,6 +198,29 @@ export function DiscoverPage() {
       setLoading(false);
     }
   };
+
+  // Suggestions pendant la saisie du nom : « er » → les noms qui commencent par « er ».
+  useEffect(() => {
+    const q = nameQuery.trim();
+    if (useMocks || q.length < 2) {
+      setTypeahead([]);
+      return;
+    }
+    let cancelled = false;
+    const timer = window.setTimeout(() => {
+      suggestNames(q, 6)
+        .then((res) => {
+          if (!cancelled) setTypeahead(res.data.filter((p) => p.id !== me?.id));
+        })
+        .catch(() => {
+          if (!cancelled) setTypeahead([]);
+        });
+    }, 250);
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
+  }, [nameQuery, useMocks, me?.id]);
 
   // « Proposer un lien » ouvre d'abord le choix du lien.
   const onPropose = (person: { id: string; firstName: string; lastName: string }) => {
@@ -261,17 +287,55 @@ export function DiscoverPage() {
         <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">{tr("Découvrir")}</p>
         <h1 className="font-display text-2xl text-foreground">{tr("Retrouve ta famille")}</h1>
         <div className="mt-3 space-y-2">
-          <div className="flex items-center gap-2 rounded-2xl border border-border bg-card px-3 py-2.5">
-            <User className="h-4 w-4 text-muted-foreground" />
-            <input
-              value={nameQuery}
-              onChange={(e) => setNameQuery(e.target.value)}
-              placeholder={tr("Nom complet de la personne")}
-              className="flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
-            />
-            <button aria-label={tr("Recherche vocale")} className="text-primary">
-              <Mic className="h-4 w-4" />
-            </button>
+          <div className="relative">
+            <div className="flex items-center gap-2 rounded-2xl border border-border bg-card px-3 py-2.5">
+              <User className="h-4 w-4 text-muted-foreground" />
+              <input
+                value={nameQuery}
+                onChange={(e) => {
+                  setNameQuery(e.target.value);
+                  setTypeaheadOpen(true);
+                }}
+                onFocus={() => setTypeaheadOpen(true)}
+                onBlur={() => window.setTimeout(() => setTypeaheadOpen(false), 200)}
+                placeholder={tr("Nom complet de la personne")}
+                autoComplete="off"
+                className="flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
+              />
+              <button aria-label={tr("Recherche vocale")} className="text-primary">
+                <Mic className="h-4 w-4" />
+              </button>
+            </div>
+            {typeaheadOpen && typeahead.length > 0 && (
+              <ul className="absolute left-0 right-0 top-full z-30 mt-1 max-h-72 overflow-y-auto rounded-2xl border border-border bg-card shadow-lg">
+                {typeahead.map((p) => (
+                  <li key={p.id}>
+                    <button
+                      type="button"
+                      // onMouseDown : le clic est pris en compte avant que le champ perde le focus
+                      onMouseDown={(e) => {
+                        e.preventDefault();
+                        setTypeaheadOpen(false);
+                        onPropose(p);
+                      }}
+                      className="flex w-full items-center gap-3 px-3 py-2.5 text-left active:bg-primary/5"
+                    >
+                      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/10 font-display text-sm font-semibold text-primary">
+                        {initials(p.firstName, p.lastName)}
+                      </span>
+                      <span className="min-w-0">
+                        <span className="block truncate text-sm font-medium text-foreground">
+                          {p.firstName} {p.lastName}
+                        </span>
+                        <span className="block truncate text-[11px] text-muted-foreground">
+                          {[p.village ?? p.birthCity, p.birthCountry].filter(Boolean).join(", ") || tr("Membre Baobab")}
+                        </span>
+                      </span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
           <div className="flex items-center gap-2 rounded-2xl border border-border bg-card px-3 py-2.5">
             <Globe className="h-4 w-4 text-muted-foreground" />
@@ -348,7 +412,7 @@ export function DiscoverPage() {
                       {p.firstName} {p.lastName}
                     </p>
                     <p className="text-xs text-muted-foreground">
-                      {[p.village, p.phone].filter(Boolean).join(" · ") || tr("Membre Baobab")}
+                      {[p.village ?? p.birthCity, p.birthCountry].filter(Boolean).join(" · ") || tr("Membre Baobab")}
                     </p>
                   </div>
                   <button
@@ -426,7 +490,9 @@ export function DiscoverPage() {
                   </div>
                 )}
                 {!discoverLoading && others.length === 0 && (
-                  <p className="text-sm text-muted-foreground">{tr("Aucune suggestion pour l'instant.")}</p>
+                  <p className="text-sm text-muted-foreground">
+                    {tr("Aucun membre avec des points communs pour l'instant. Utilise la recherche pour trouver quelqu'un.")}
+                  </p>
                 )}
                 <ul className="divide-y divide-border">
                   {others.map((m) => (

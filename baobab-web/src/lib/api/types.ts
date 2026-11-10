@@ -3,6 +3,11 @@ export type SocialTitle = "chief" | "elder" | "notable";
 
 export type ApiPerson = {
   id: string;
+  /** Vrai si la personne a un compte avec téléphone vérifié (le numéro lui-même n'est jamais affiché aux autres). */
+  hasPhone?: boolean;
+  /** Qui a ajouté ce profil (proches sans compte) et état du compte. */
+  createdBy?: string | null;
+  accountStatus?: string | null;
   firstName: string;
   lastName: string;
   gender?: "male" | "female" | "other" | null;
@@ -120,6 +125,8 @@ export type VerifyOtpResult =
       refreshToken?: string;
       person: ApiPerson;
       pinRequired?: boolean;
+      /** Vrai si un proche avait créé ce profil et que la personne vient de le récupérer. */
+      claimed?: boolean;
     };
 
 export type NotificationPerson = {

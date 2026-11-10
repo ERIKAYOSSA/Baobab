@@ -29,14 +29,23 @@ export type AuthenticatedRequest = Request & {
   auth?: AuthPayload;
 };
 
-export function publicPerson(person: Record<string, unknown>): Record<string, unknown> {
+/**
+ * Fiche sans secrets. Le téléphone est MASQUÉ par défaut (remplacé par hasPhone : compte vérifié ou non) ;
+ * il n'est renvoyé que pour la personne elle-même (includePhone).
+ */
+export function publicPerson(
+  person: Record<string, unknown>,
+  options?: { includePhone?: boolean }
+): Record<string, unknown> {
   const {
     pinHash: _p,
     refreshTokenHash: _r,
     refreshTokenJti: _j,
+    claimPhone: _c,
+    phone,
     ...safe
   } = person;
-  return safe;
+  return options?.includePhone ? { ...safe, phone, hasPhone: Boolean(phone) } : { ...safe, hasPhone: Boolean(phone) };
 }
 
 export function hashToken(raw: string): string {
