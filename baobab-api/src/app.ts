@@ -8,10 +8,16 @@ import { relationshipRequestsRouter } from "./routes/relationshipRequests";
 import { authRouter } from "./routes/auth";
 import { notificationsRouter } from "./routes/notifications";
 import { adminRouter } from "./routes/admin";
+import { chatRouter } from "./routes/chat";
 
 const app = express();
 
-app.use(cors());
+// En production, CORS_ORIGIN = adresse du site (ex. https://baobab-web.pages.dev). Plusieurs adresses : séparées par des virgules.
+const allowedOrigins = (process.env.CORS_ORIGIN ?? "")
+  .split(",")
+  .map((o) => o.trim().replace(/\/$/, ""))
+  .filter(Boolean);
+app.use(cors(allowedOrigins.length > 0 ? { origin: allowedOrigins } : undefined));
 app.use(express.json({ limit: "2mb" }));
 
 app.get("/", (_req, res) => {
@@ -53,6 +59,7 @@ app.use("/relationship-requests", relationshipRequestsRouter);
 app.use("/auth", authRouter);
 app.use("/notifications", notificationsRouter);
 app.use("/admin", adminRouter);
+app.use("/chat", chatRouter);
 
 app.use((err: unknown, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
   const message = err instanceof Error ? err.message : "Unexpected error";
