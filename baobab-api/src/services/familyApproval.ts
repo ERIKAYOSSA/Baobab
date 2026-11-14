@@ -224,6 +224,9 @@ function neoCount(value: unknown): number {
   return Number(value ?? 0);
 }
 
+/** Liens de couple : confirmés immédiatement, sans vote de la famille. */
+const SPOUSE_TYPES = new Set<string>(["HUSBAND_OF", "WIFE_OF", "MARRIED_TO", "CO_WIFE_OF"]);
+
 export async function createRelationshipRequest(
   session: Session,
   input: {
@@ -244,7 +247,11 @@ export async function createRelationshipRequest(
 }> {
   const { type, requesterId, fromPersonId, toPersonId, appellation, partyConflictCodes } = input;
   const anchorPersonId = requesterId === fromPersonId ? toPersonId : fromPersonId;
-  const requiredApprovers = await getRequiredApprovers(session, requesterId, anchorPersonId);
+  // Un mariage est affiché dès qu'un des deux partenaires le déclare : pas d'attente de l'avis des autres.
+  // (Les règles d'incompatibilité sont toujours vérifiées avant, et chacun des deux peut retirer le lien.)
+  const requiredApprovers = SPOUSE_TYPES.has(type)
+    ? []
+    : await getRequiredApprovers(session, requesterId, anchorPersonId);
   const requestId = randomUUID();
   const partyDisagreement = Boolean(partyConflictCodes?.length);
 
