@@ -8,6 +8,7 @@ import { ApiError, sendOtp, verifyOtp } from "../lib/api";
 import { buildE164, countryByDial, detectDefaultDial, DIAL_COUNTRIES } from "../lib/phoneCountries";
 
 import { tr } from "../lib/i18n/I18nProvider";
+import { listenForSmsCode } from "../lib/webOtp";
 export function LoginPage() {
   const navigate = useNavigate();
   const { useMocks, setSession, isAuthenticated } = useAuth();
@@ -21,6 +22,8 @@ export function LoginPage() {
   const [notRegistered, setNotRegistered] = useState(false);
   const [busy, setBusy] = useState(false);
   const otpRefs = useRef<Array<HTMLInputElement | null>>([]);
+  const stopSmsListener = useRef<() => void>(() => undefined);
+  useEffect(() => () => stopSmsListener.current(), []);
   const selectedCountry = countryByDial(dialCode) ?? DIAL_COUNTRIES[0];
 
   // Déjà connecté : direction l'arbre
@@ -98,6 +101,10 @@ export function LoginPage() {
       if (!otpSent) {
         const res = await sendOtp(phone);
         setOtpSent(true);
+        // Remplissage automatique : code de test (mode dev) ou SMS reçu (Chrome sur Android).
+        if (res.data.devCode) setCode(String(res.data.devCode).replace(/\D/g, "").slice(0, 6));
+        stopSmsListener.current();
+        stopSmsListener.current = listenForSmsCode((c) => setCode(c));
         toast.success(tr("Code envoyé"), {
           description: res.data.devCode ? tr("Mode dev — code : {code}", { code: res.data.devCode }) : tr("Vérifie tes SMS."),
         });

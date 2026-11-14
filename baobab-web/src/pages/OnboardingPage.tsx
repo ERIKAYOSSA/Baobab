@@ -59,6 +59,7 @@ import {
 } from "../components/ui/alert-dialog";
 
 import { tr } from "../lib/i18n/I18nProvider";
+import { listenForSmsCode } from "../lib/webOtp";
 type RelativeHit = {
   id: string;
   n: string;
@@ -137,6 +138,8 @@ export function OnboardingPage() {
   const [phoneVerifiedToken, setPhoneVerifiedToken] = useState<string | null>(null);
   const [authBusy, setAuthBusy] = useState(false);
   const otpRefs = useRef<Array<HTMLInputElement | null>>([]);
+  const stopSmsListener = useRef<() => void>(() => undefined);
+  useEffect(() => () => stopSmsListener.current(), []);
   const selectedCountry = countryByDial(dialCode) ?? DIAL_COUNTRIES[0];
   const [name, setName] = useState("");
   const [dob, setDob] = useState("");
@@ -411,6 +414,10 @@ export function OnboardingPage() {
         const res = await sendOtp(trimmed);
         setOtpSent(true);
         setE164Phone(res.data.phone);
+        // Remplissage automatique : code de test (mode dev) ou SMS reçu (Chrome sur Android).
+        if (res.data.devCode) setCode(String(res.data.devCode).replace(/\D/g, "").slice(0, 6));
+        stopSmsListener.current();
+        stopSmsListener.current = listenForSmsCode((c) => setCode(c));
         toast.success(tr("Code envoyé"), {
           description: res.data.devCode
             ? tr("Mode dev — code : {code}", { code: res.data.devCode })
