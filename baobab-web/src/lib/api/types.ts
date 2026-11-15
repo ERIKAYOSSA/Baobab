@@ -39,6 +39,9 @@ export type ApiPerson = {
   birthCountry?: string | null;
   birthCity?: string | null;
   birthQuarter?: string | null;
+  multipleBirth?: "twin" | "triplet" | "quadruplet" | "quintuplet" | null;
+  birthRank?: number | null;
+  birthNote?: string | null;
   /** Préférences de découverte (absent = activé, sauf receiveInvites). */
   appearInSuggestions?: boolean | null;
   detectLinks?: boolean | null;
@@ -74,6 +77,9 @@ export type PersonProfileUpdate = Partial<
     | "birthCountry"
     | "birthCity"
     | "birthQuarter"
+    | "multipleBirth"
+    | "birthRank"
+    | "birthNote"
     | "appearInSuggestions"
     | "detectLinks"
     | "receiveInvites"
@@ -89,6 +95,10 @@ export type FamilyTreeEdge = {
   sharedLine?: string;
   uiLabel?: string;
   official?: boolean;
+  /** Lien en attente d'approbation (visible seulement par celui qui l'a demandé). */
+  provisional?: boolean;
+  requestId?: string;
+  awaitingFrom?: string[];
 };
 
 export type FamilyTreeNode = ApiPerson & {

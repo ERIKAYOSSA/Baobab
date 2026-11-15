@@ -24,12 +24,20 @@ export type Person = {
   spouseIds?: string[];
   /** Frères et sœurs déclarés directement (lien de fratrie), même sans parent commun connu. */
   siblingIds?: string[];
+  /** Parent ajouté mais pas encore validé : affiché de façon provisoire. */
+  provisional?: boolean;
+  awaitingFrom?: string[];
+  /** Naissance multiple (jumeaux, triplés…), rang de naissance et signe distinctif. */
+  multipleBirth?: "twin" | "triplet" | "quadruplet" | "quintuplet";
+  birthRank?: number;
+  birthNote?: string;
+  /** Profil ajouté par un proche (sans compte) : seul son auteur peut le supprimer. */
+  createdBy?: string;
+  unclaimed?: boolean;
   /** Co-épouses (CO_WIFE_OF), distinctes des conjoints. */
   coWifeIds?: string[];
   motherId?: string;
   fatherId?: string;
-  createdBy?: string;
-  unclaimed?: boolean;
 };
 
 export const MARITAL_LABELS: Record<MaritalStatus, string> = {

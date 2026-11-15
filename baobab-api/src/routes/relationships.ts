@@ -1,10 +1,13 @@
 import { Router } from "express";
 import { getDriver } from "../db/neo4j";
 import {
+  autoRelationshipTypes,
   createRelationshipSchema,
   deleteRelationshipQuerySchema,
-  relationshipTypeSchema
+  relationshipTypeSchema,
+  userRelationshipTypes
 } from "../schemas/relationship";
+import { syncConsanguinityRelationships } from "../services/consanguinitySync";
 import {
   createRelationshipRequest,
   pendingRequestExists,
@@ -196,6 +199,9 @@ relationshipsRouter.delete("/", requireAuth, async (req: AuthenticatedRequest, r
       });
     }
 
+    // Les liens déduits (fratrie, cousins) sont recalculés après la suppression.
+    await syncConsanguinityRelationships(session);
+
     const record = result.records[0];
     res.json({
       ok: true,
@@ -209,6 +215,70 @@ relationshipsRouter.delete("/", requireAuth, async (req: AuthenticatedRequest, r
     res.status(500).json({
       ok: false,
       message: "Failed to delete relationship",
+      error: error instanceof Error ? error.message : "Unknown error"
+    });
+  } finally {
+    await session.close();
+  }
+});
+
+/**
+ * Retire une personne de MA famille : supprime tous les liens directs entre moi et elle
+ * (parent, enfant, conjoint, fratrie…). La personne et le reste de l'arbre ne sont pas modifiés.
+ * Les demandes de lien encore en attente entre nous sont annulées.
+ */
+relationshipsRouter.delete("/with/:otherPersonId", requireAuth, async (req: AuthenticatedRequest, res) => {
+  const me = req.auth!.personId;
+  const otherPersonId = String(req.params.otherPersonId ?? "");
+  if (!/^[0-9a-f-]{36}$/i.test(otherPersonId)) {
+    return res.status(400).json({ ok: false, message: "Invalid person id" });
+  }
+  if (otherPersonId === me) {
+    return res.status(400).json({ ok: false, message: "Cannot remove yourself" });
+  }
+
+  const session = getDriver().session();
+  try {
+    const result = await session.run(
+      `
+      MATCH (a:Person {id: $me})-[r]-(b:Person {id: $otherPersonId})
+      WHERE type(r) IN $types
+      WITH r, type(r) AS t
+      DELETE r
+      RETURN count(t) AS removed
+      `,
+      { me, otherPersonId, types: [...userRelationshipTypes, ...autoRelationshipTypes] }
+    );
+    const raw = result.records[0]?.get("removed");
+    const removed =
+      typeof raw === "object" && raw !== null && "low" in raw ? (raw as { low: number }).low : Number(raw ?? 0);
+
+    const cancelledResult = await session.run(
+      `
+      MATCH (req:RelationshipRequest {status: 'pending'})
+      WHERE (req.fromPersonId = $me AND req.toPersonId = $otherPersonId)
+         OR (req.fromPersonId = $otherPersonId AND req.toPersonId = $me)
+      SET req.status = 'cancelled', req.decidedAt = datetime()
+      RETURN count(req) AS cancelled
+      `,
+      { me, otherPersonId }
+    );
+    const cancelledRaw = cancelledResult.records[0]?.get("cancelled");
+    const cancelled =
+      typeof cancelledRaw === "object" && cancelledRaw !== null && "low" in cancelledRaw
+        ? (cancelledRaw as { low: number }).low
+        : Number(cancelledRaw ?? 0);
+
+    if (removed === 0 && cancelled === 0) {
+      return res.status(404).json({ ok: false, message: "No direct link with this person" });
+    }
+
+    if (removed > 0) await syncConsanguinityRelationships(session);
+    res.json({ ok: true, data: { removed, cancelled } });
+  } catch (error) {
+    res.status(500).json({
+      ok: false,
+      message: "Failed to remove links",
       error: error instanceof Error ? error.message : "Unknown error"
     });
   } finally {

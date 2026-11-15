@@ -34,6 +34,9 @@ function mapProfileFields(p: ApiPerson): Partial<Person> {
     residence: p.residence ?? p.village ?? undefined,
     burialPlace: p.burialPlace ?? undefined,
     ethnicity: p.ethnicity ?? undefined,
+    multipleBirth: p.multipleBirth ?? undefined,
+    birthRank: p.birthRank ?? undefined,
+    birthNote: p.birthNote ?? undefined,
     photoUrl: p.photoUrl ?? undefined,
   };
 }
@@ -95,6 +98,7 @@ function mapNode(node: FamilyTreeNode, edges: FamilyTreeEdge[], meId: string): P
       .map((e) => (e.fromPersonId === id ? e.toPersonId : e.fromPersonId)),
   );
 
+  const provisionalEdge = edges.find((e) => e.provisional && e.fromPersonId === id);
   const siblingIds = uniqueIds(
     edges
       .filter((e) => SIBLING_TYPES.has(e.type) && (e.fromPersonId === id || e.toPersonId === id))
@@ -120,6 +124,8 @@ function mapNode(node: FamilyTreeNode, edges: FamilyTreeEdge[], meId: string): P
     spouseIds: spouseIds.length ? spouseIds : undefined,
     coWifeIds: coWifeIds.length ? coWifeIds : undefined,
     siblingIds: siblingIds.length ? siblingIds : undefined,
+    provisional: provisionalEdge ? true : undefined,
+    awaitingFrom: provisionalEdge?.awaitingFrom?.length ? provisionalEdge.awaitingFrom : undefined,
     createdBy: node.createdBy ?? undefined,
     unclaimed: node.accountStatus === "unclaimed",
     ...profile,

@@ -115,7 +115,8 @@ const COUNTRIES = [
   "République démocratique du Congo", "Royaume-Uni", "Rwanda", "São Tomé-et-Príncipe",
   "Sénégal", "Seychelles", "Sierra Leone", "Somalie", "Soudan", "Soudan du Sud",
   "Suisse", "Tanzanie", "Tchad", "Togo", "Tunisie", "Zambie", "Zimbabwe",
-];
+  "Autriche", "Bulgarie", "Croatie", "Danemark", "Estonie", "Finlande", "Grèce", "Hongrie", "Irlande", "Islande", "Lettonie", "Lituanie", "Luxembourg", "Malte", "Norvège", "Pays-Bas", "Pologne", "République tchèque", "Roumanie", "Russie", "Serbie", "Slovaquie", "Slovénie", "Suède", "Ukraine",
+].sort((a, b) => a.localeCompare(b, "fr"));
 
 const SAMPLE_RELATIVES: RelativeHit[] = [
   { id: "p1", n: "Kwame Mensah", c: "Akan · Abidjan", tree: 42 },

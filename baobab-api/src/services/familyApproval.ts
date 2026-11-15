@@ -95,6 +95,46 @@ export async function getRequiredApprovers(
     .sort();
 }
 
+/**
+ * Qui doit valider qu'on ajoute un PARENT à `childId` ?
+ *  1) l'autre parent déjà dans l'arbre, s'il peut voter (compte actif, vivant) ;
+ *  2) sinon, les frères et sœurs directs qui peuvent voter ;
+ *  3) sinon personne : le lien est confirmé tout de suite.
+ */
+export async function getParentLinkApprovers(
+  session: Session,
+  childId: string,
+  newParentId: string
+): Promise<string[]> {
+  const toRefs = (records: Array<{ get: (k: string) => unknown }>): PersonRef[] =>
+    records.map((r) => ({
+      id: r.get("id") as string,
+      vitalStatus: r.get("vitalStatus") as string | null,
+      accountStatus: r.get("accountStatus") as string | null
+    }));
+
+  const parents = await session.run(
+    `
+    MATCH (p:Person)-[:FATHER_OF|MOTHER_OF|PARENT_OF]->(c:Person {id: $childId})
+    WHERE p.id <> $newParentId
+    RETURN DISTINCT p.id AS id, p.vitalStatus AS vitalStatus, p.accountStatus AS accountStatus
+    `,
+    { childId, newParentId }
+  );
+  const parentVoters = toRefs(parents.records).filter(canVote).map((p) => p.id);
+  if (parentVoters.length > 0) return parentVoters.sort();
+
+  const siblings = await session.run(
+    `
+    MATCH (c:Person {id: $childId})-[:SIBLING_OF|FULL_SIBLING_OF|HALF_SIBLING_OF]-(s:Person)
+    WHERE s.id <> $newParentId AND s.id <> $childId
+    RETURN DISTINCT s.id AS id, s.vitalStatus AS vitalStatus, s.accountStatus AS accountStatus
+    `,
+    { childId, newParentId }
+  );
+  return toRefs(siblings.records).filter(canVote).map((p) => p.id).sort();
+}
+
 /** Parents, children, and siblings (sisters and brothers, including half). */
 export async function isDirectKin(
   session: Session,
@@ -226,6 +266,7 @@ function neoCount(value: unknown): number {
 
 /** Liens de couple : confirmés immédiatement, sans vote de la famille. */
 const SPOUSE_TYPES = new Set<string>(["HUSBAND_OF", "WIFE_OF", "MARRIED_TO", "CO_WIFE_OF"]);
+const PARENT_LINK_TYPES = new Set<string>(["FATHER_OF", "MOTHER_OF", "PARENT_OF"]);
 
 export async function createRelationshipRequest(
   session: Session,
@@ -249,9 +290,13 @@ export async function createRelationshipRequest(
   const anchorPersonId = requesterId === fromPersonId ? toPersonId : fromPersonId;
   // Un mariage est affiché dès qu'un des deux partenaires le déclare : pas d'attente de l'avis des autres.
   // (Les règles d'incompatibilité sont toujours vérifiées avant, et chacun des deux peut retirer le lien.)
+  // Ajout d'un parent (je suis l'enfant) : seul l'autre parent, sinon les frères et sœurs directs, valident.
+  const isParentLinkByChild = PARENT_LINK_TYPES.has(type) && toPersonId === requesterId;
   const requiredApprovers = SPOUSE_TYPES.has(type)
     ? []
-    : await getRequiredApprovers(session, requesterId, anchorPersonId);
+    : isParentLinkByChild
+      ? await getParentLinkApprovers(session, requesterId, fromPersonId)
+      : await getRequiredApprovers(session, requesterId, anchorPersonId);
   const requestId = randomUUID();
   const partyDisagreement = Boolean(partyConflictCodes?.length);
 

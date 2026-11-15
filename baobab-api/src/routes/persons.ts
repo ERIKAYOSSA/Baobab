@@ -295,14 +295,14 @@ personsRouter.get("/:personId", requireAuth, async (req: AuthenticatedRequest & 
   }
 });
 
-personsRouter.get("/:personId/family-tree/export", requireAuth, async (req: Request<PersonParams>, res) => {
+personsRouter.get("/:personId/family-tree/export", requireAuth, async (req: AuthenticatedRequest & Request<PersonParams>, res) => {
   const { personId } = req.params;
   const depth = Number(req.query.depth ?? 2);
   const format = String(req.query.format ?? "svg");
   const session = getDriver().session();
 
   try {
-    const tree = await buildFamilyTree(session, personId, depth);
+    const tree = await buildFamilyTree(session, personId, depth, req.auth!.personId);
     if (!tree) {
       return res.status(404).json({ ok: false, message: "Person not found" });
     }
@@ -331,13 +331,13 @@ personsRouter.get("/:personId/family-tree/export", requireAuth, async (req: Requ
   }
 });
 
-personsRouter.get("/:personId/family-tree", requireAuth, async (req: Request<PersonParams>, res) => {
+personsRouter.get("/:personId/family-tree", requireAuth, async (req: AuthenticatedRequest & Request<PersonParams>, res) => {
   const { personId } = req.params;
   const depth = Number(req.query.depth ?? 2);
   const session = getDriver().session();
 
   try {
-    const tree = await buildFamilyTree(session, personId, depth);
+    const tree = await buildFamilyTree(session, personId, depth, req.auth!.personId);
     if (!tree) {
       return res.status(404).json({ ok: false, message: "Person not found" });
     }

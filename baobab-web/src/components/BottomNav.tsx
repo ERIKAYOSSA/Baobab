@@ -22,8 +22,8 @@ export function BottomNav() {
 
   const tabs: Tab[] = [
     { to: "/tree", label: t("nav.tree"), icon: TreePine },
-    { to: "/discover", label: t("nav.discover"), icon: Compass },
     { to: "/chat", label: tr("Discussions"), icon: MessageCircle },
+    { to: "/discover", label: t("nav.discover"), icon: Compass },
     { to: "/notifications", label: t("nav.notifications"), icon: Bell },
     { to: "/me", label: t("nav.me"), icon: User },
   ];

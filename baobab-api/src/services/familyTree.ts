@@ -12,6 +12,10 @@ export type FamilyTreeEdge = {
   sharedLine?: string;
   uiLabel?: string;
   official?: boolean;
+  /** Lien en attente d'approbation, affiché seulement à celui qui l'a demandé. */
+  provisional?: boolean;
+  requestId?: string;
+  awaitingFrom?: string[];
 };
 
 export type FamilyTreeNode = PersonNode & {
@@ -148,7 +152,9 @@ function uiGroup(roles: string[], generation: number): FamilyTreeNode["ui"]["gro
 export async function buildFamilyTree(
   session: Session,
   personId: string,
-  depth = 2
+  depth = 2,
+  /** Personne qui consulte l'arbre : elle voit en plus ses propres demandes de parent en attente. */
+  viewerId?: string
 ): Promise<FamilyTreeResult | null> {
   const boundedDepth = Math.min(Math.max(depth, 1), 4);
 
@@ -202,6 +208,43 @@ export async function buildFamilyTree(
       uiLabel: (rel.properties?.partyAppellation as string | undefined) || edgeLabel(relType),
       official: rel.properties?.official === false ? false : undefined
     });
+  }
+
+  // Parent demandé par le consultant, pas encore validé : affiché de façon PROVISOIRE.
+  if (viewerId) {
+    const pending = await session.run(
+      `
+      MATCH (req:RelationshipRequest {requesterId: $viewerId, status: "pending"})
+      WHERE req.type IN ["FATHER_OF", "MOTHER_OF", "PARENT_OF"] AND req.toPersonId IN $nodeIds
+      OPTIONAL MATCH (approver:Person)-[a:MUST_APPROVE]->(req)
+      WHERE a.status = "pending"
+      WITH req, collect(approver.firstName + " " + approver.lastName) AS awaiting
+      MATCH (parent:Person {id: req.fromPersonId})
+      RETURN req.id AS requestId, req.type AS type, req.fromPersonId AS fromId, req.toPersonId AS toId,
+             parent, awaiting
+      `,
+      { viewerId, nodeIds: [...nodeMap.keys()] }
+    );
+    for (const record of pending.records) {
+      const parent = mapPerson(record.get("parent"));
+      if (!parent) continue;
+      const type = record.get("type") as string;
+      const fromPersonId = record.get("fromId") as string;
+      const toPersonId = record.get("toId") as string;
+      const key = `${type}:${fromPersonId}:${toPersonId}`;
+      if (edgeKey.has(key)) continue;
+      edgeKey.add(key);
+      if (!nodeMap.has(fromPersonId)) nodeMap.set(fromPersonId, parent);
+      edges.push({
+        type,
+        fromPersonId,
+        toPersonId,
+        uiLabel: edgeLabel(type),
+        provisional: true,
+        requestId: record.get("requestId") as string,
+        awaitingFrom: (record.get("awaiting") as string[]).filter(Boolean)
+      });
+    }
   }
 
   const rootId = rootProps.id as string;

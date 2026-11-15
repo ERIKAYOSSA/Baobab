@@ -3,6 +3,7 @@ import { Lock, Crown, Star, Award, BadgeCheck, Flower2 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import type { Person } from "./types";
 import { useI18n, tr } from "../../lib/i18n/I18nProvider";
+import { byBirthOrder, multipleBirthPill } from "../../lib/multipleBirth";
 
 type Props = {
   people: Person[];
@@ -71,7 +72,7 @@ export function FamilyTree({
       {showAncestors1 && ancestorsGen1.length > 0 && <Connector label={t<string>("tree.relParent")} />}
 
       <Generation label={tr("Toi & fratrie")} tone="primary" rail={siblings.length > 0}>
-        {siblings.map((p) => (
+        {[...siblings].sort(byBirthOrder).map((p) => (
           <Node key={p.id} p={p} selected={selectedId === p.id} onSelect={onSelect} small />
         ))}
         <Node p={me} selected={selectedId === meId} onSelect={onSelect} highlight />
@@ -92,7 +93,7 @@ export function FamilyTree({
       {showChildren && children.length > 0 && <Connector label={t<string>("tree.relChild")} />}
       {showChildren && children.length > 0 && (
         <Generation label={tr("Enfants")} rail={children.length > 1}>
-          {children.map((p) => (
+          {[...children].sort(byBirthOrder).map((p) => (
             <Node key={p.id} p={p} selected={selectedId === p.id} onSelect={onSelect} small />
           ))}
           <AddNode label={tr("Ajouter")} onClick={() => onSelect("__add__")} />
@@ -270,6 +271,8 @@ function Node({
       <div className="relative">
         <div
           className={`flex ${size} items-center justify-center overflow-hidden rounded-full font-display font-semibold ring-4 transition ${ring} ${
+            p.provisional ? "border-2 border-dashed border-accent opacity-80" : ""
+          } ${
             isDeceased ? "grayscale" : ""
           } ${selected ? "scale-110 ring-offset-2 ring-offset-background" : ""} ${
             highlight && !p.photoUrl ? "bg-primary text-primary-foreground" : "bg-card text-foreground"
@@ -290,6 +293,16 @@ function Node({
         />
       </div>
       <span className="max-w-[88px] truncate text-[11px] font-medium text-foreground">{p.name}</span>
+      {p.provisional && (
+        <span className="rounded-full border border-dashed border-accent px-1.5 py-px text-[9px] font-semibold text-accent-foreground">
+          {tr("Provisoire")}
+        </span>
+      )}
+      {p.multipleBirth && (
+        <span className="max-w-[96px] truncate rounded-full bg-accent/25 px-1.5 py-px text-[9px] font-semibold text-accent-foreground">
+          {multipleBirthPill(p)}
+        </span>
+      )}
       {(p.birth || p.death) && (
         <span className="text-[10px] text-muted-foreground">
           {p.birth ?? "?"}

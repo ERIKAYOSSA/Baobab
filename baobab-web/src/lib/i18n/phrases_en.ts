@@ -548,4 +548,7 @@ export const EN_PHRASES: Record<string, string> = {
   "Signe distinctif (facultatif)": "Distinguishing mark (optional)",
   "Pour ne pas confondre les jumeaux": "So twins aren't mixed up",
   "Ex. grain de beauté à gauche, cicatrice…": "E.g. mole on the left, scar…",
+  "Provisoire": "Provisional",
+  "Lien provisoire : en attente de l'approbation de {names}.": "Provisional link: waiting for approval from {names}.",
+  "Lien provisoire : en attente d'approbation.": "Provisional link: waiting for approval.",
 };

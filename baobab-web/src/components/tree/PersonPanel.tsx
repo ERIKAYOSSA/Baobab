@@ -13,17 +13,25 @@ import {
   Plus,
   Sprout,
   Scroll,
+  Trash2,
+  UserMinus,
+  Users,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { MARITAL_LABELS, TITLE_LABELS, type Person } from "./types";
 
 import { tr } from "../../lib/i18n/I18nProvider";
+import { multipleBirthSummary } from "../../lib/multipleBirth";
 type Props = {
   person: Person;
   onClose: () => void;
   onEnrich?: () => void;
   onLegacy?: () => void;
   onAdd?: () => void;
+  /** Retirer cette personne de ma famille (supprime les liens directs). */
+  onRemoveLink?: () => void;
+  /** Supprimer ce proche (profil que j'ai ajouté, sans compte). */
+  onDeleteRelative?: () => void;
 };
 
 function formatDate(full?: string, year?: string): string | undefined {
@@ -36,7 +44,7 @@ function formatDate(full?: string, year?: string): string | undefined {
   return year;
 }
 
-export function PersonPanel({ person, onClose, onEnrich, onLegacy, onAdd }: Props) {
+export function PersonPanel({ person, onClose, onEnrich, onLegacy, onAdd, onRemoveLink, onDeleteRelative }: Props) {
   const initials = person.name
     .replace(/[()]/g, "")
     .split(" ")
@@ -67,6 +75,8 @@ export function PersonPanel({ person, onClose, onEnrich, onLegacy, onAdd }: Prop
         .join(" · "),
     },
     { icon: Calendar, label: tr("Naissance"), value: born },
+    { icon: Users, label: tr("Naissance multiple"), value: multipleBirthSummary(person) },
+    { icon: Tag, label: tr("Signe distinctif"), value: person.birthNote },
     { icon: Flower2, label: tr("Décès"), value: died },
     {
       icon: Heart,
@@ -126,6 +136,14 @@ export function PersonPanel({ person, onClose, onEnrich, onLegacy, onAdd }: Prop
           </div>
         </div>
 
+        {person.provisional && (
+          <p className="mt-3 rounded-xl border border-dashed border-accent bg-accent/10 px-3 py-2 text-xs text-foreground">
+            {person.awaitingFrom?.length
+              ? tr("Lien provisoire : en attente de l'approbation de {names}.", { names: person.awaitingFrom.join(", ") })
+              : tr("Lien provisoire : en attente d'approbation.")}
+          </p>
+        )}
+
         <dl className="mt-3 divide-y divide-border border-t border-border">
           {rows.length === 0 && (
             <p className="px-4 py-3 text-xs text-muted-foreground">{tr("Aucune information détaillée pour l'instant. Enrichis cette fiche pour renforcer les liens familiaux.")}
@@ -141,6 +159,29 @@ export function PersonPanel({ person, onClose, onEnrich, onLegacy, onAdd }: Prop
             </div>
           ))}
         </dl>
+
+        {(onRemoveLink || onDeleteRelative) && (
+          <div className="flex flex-col border-t border-border px-4 py-1">
+            {onRemoveLink && (
+              <button
+                onClick={onRemoveLink}
+                className="flex items-center gap-2 py-2.5 text-left text-xs font-medium text-destructive"
+              >
+                <UserMinus className="h-3.5 w-3.5" />
+                {tr("Retirer de ma famille")}
+              </button>
+            )}
+            {onDeleteRelative && (
+              <button
+                onClick={onDeleteRelative}
+                className="flex items-center gap-2 py-2.5 text-left text-xs font-medium text-destructive"
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+                {tr("Supprimer ce proche")}
+              </button>
+            )}
+          </div>
+        )}
 
         <div className="sticky bottom-0 flex items-center gap-2 border-t border-border bg-card px-4 py-3">
           <ActionBtn icon={Sprout} label={tr("Enrichir mon arbre")} onClick={onEnrich} />
