@@ -14,6 +14,8 @@ export type FamilyTreeEdge = {
   official?: boolean;
   /** Lien en attente d'approbation, affiché seulement à celui qui l'a demandé. */
   provisional?: boolean;
+  /** La personne affichée en provisoire (l'autre partie, pas celui qui consulte). */
+  provisionalPersonId?: string;
   requestId?: string;
   awaitingFrom?: string[];
 };
@@ -210,37 +212,44 @@ export async function buildFamilyTree(
     });
   }
 
-  // Parent demandé par le consultant, pas encore validé : affiché de façon PROVISOIRE.
+  // Liens demandés par le consultant (parent, enfant, couple), pas encore validés : affichés en PROVISOIRE.
   if (viewerId) {
     const pending = await session.run(
       `
       MATCH (req:RelationshipRequest {requesterId: $viewerId, status: "pending"})
-      WHERE req.type IN ["FATHER_OF", "MOTHER_OF", "PARENT_OF"] AND req.toPersonId IN $nodeIds
+      WHERE req.type IN $types AND (req.toPersonId IN $nodeIds OR req.fromPersonId IN $nodeIds)
       OPTIONAL MATCH (approver:Person)-[a:MUST_APPROVE]->(req)
       WHERE a.status = "pending"
       WITH req, collect(approver.firstName + " " + approver.lastName) AS awaiting
-      MATCH (parent:Person {id: req.fromPersonId})
-      RETURN req.id AS requestId, req.type AS type, req.fromPersonId AS fromId, req.toPersonId AS toId,
-             parent, awaiting
+      MATCH (fromP:Person {id: req.fromPersonId}), (toP:Person {id: req.toPersonId})
+      RETURN req.id AS requestId, req.type AS type, fromP, toP, awaiting
       `,
-      { viewerId, nodeIds: [...nodeMap.keys()] }
+      {
+        viewerId,
+        nodeIds: [...nodeMap.keys()],
+        types: ["FATHER_OF", "MOTHER_OF", "PARENT_OF", "HUSBAND_OF", "WIFE_OF", "MARRIED_TO", "CO_WIFE_OF"]
+      }
     );
     for (const record of pending.records) {
-      const parent = mapPerson(record.get("parent"));
-      if (!parent) continue;
+      const fromNode = mapPerson(record.get("fromP"));
+      const toNode = mapPerson(record.get("toP"));
+      if (!fromNode || !toNode) continue;
       const type = record.get("type") as string;
-      const fromPersonId = record.get("fromId") as string;
-      const toPersonId = record.get("toId") as string;
+      const fromPersonId = fromNode.id as string;
+      const toPersonId = toNode.id as string;
       const key = `${type}:${fromPersonId}:${toPersonId}`;
       if (edgeKey.has(key)) continue;
       edgeKey.add(key);
-      if (!nodeMap.has(fromPersonId)) nodeMap.set(fromPersonId, parent);
+      if (!nodeMap.has(fromPersonId)) nodeMap.set(fromPersonId, fromNode);
+      if (!nodeMap.has(toPersonId)) nodeMap.set(toPersonId, toNode);
       edges.push({
         type,
         fromPersonId,
         toPersonId,
         uiLabel: edgeLabel(type),
         provisional: true,
+        // La personne « provisoire » est l'autre partie, pas le consultant.
+        provisionalPersonId: fromPersonId === viewerId ? toPersonId : fromPersonId,
         requestId: record.get("requestId") as string,
         awaitingFrom: (record.get("awaiting") as string[]).filter(Boolean)
       });

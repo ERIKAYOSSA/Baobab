@@ -1,4 +1,4 @@
-import type { Person } from "../../components/tree/types";
+import type { Person } from "@/components/tree/types";
 import type { ApiPerson, FamilyTreeEdge, FamilyTreeNode, FamilyTreeResult, MaritalStatus } from "./types";
 
 const PARENT_TYPES = new Set(["PARENT_OF", "FATHER_OF", "MOTHER_OF"]);
@@ -98,7 +98,7 @@ function mapNode(node: FamilyTreeNode, edges: FamilyTreeEdge[], meId: string): P
       .map((e) => (e.fromPersonId === id ? e.toPersonId : e.fromPersonId)),
   );
 
-  const provisionalEdge = edges.find((e) => e.provisional && e.fromPersonId === id);
+  const provisionalEdge = edges.find((e) => e.provisional && e.provisionalPersonId === id);
   const siblingIds = uniqueIds(
     edges
       .filter((e) => SIBLING_TYPES.has(e.type) && (e.fromPersonId === id || e.toPersonId === id))

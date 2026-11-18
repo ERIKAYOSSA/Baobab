@@ -97,6 +97,7 @@ export type FamilyTreeEdge = {
   official?: boolean;
   /** Lien en attente d'approbation (visible seulement par celui qui l'a demandé). */
   provisional?: boolean;
+  provisionalPersonId?: string;
   requestId?: string;
   awaitingFrom?: string[];
 };

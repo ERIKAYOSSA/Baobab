@@ -135,6 +135,50 @@ export async function getParentLinkApprovers(
   return toRefs(siblings.records).filter(canVote).map((p) => p.id).sort();
 }
 
+/**
+ * Qui doit valider un lien de COUPLE déclaré par `requesterId` avec `otherId` ?
+ *  1) l'autre personne, si elle a un compte (actif, vivante) : elle doit accepter ;
+ *  2) sinon, les frères et sœurs directs du demandeur qui peuvent voter ;
+ *  3) sinon personne : le lien est confirmé tout de suite.
+ * Dans tous les cas, le lien est affiché en « provisoire » au demandeur en attendant.
+ */
+export async function getSpouseLinkApprovers(
+  session: Session,
+  requesterId: string,
+  otherId: string
+): Promise<string[]> {
+  const other = await session.run(
+    `MATCH (p:Person {id: $otherId}) RETURN p.id AS id, p.vitalStatus AS vitalStatus, p.accountStatus AS accountStatus`,
+    { otherId }
+  );
+  const rec = other.records[0];
+  if (rec) {
+    const ref: PersonRef = {
+      id: rec.get("id") as string,
+      vitalStatus: rec.get("vitalStatus") as string | null,
+      accountStatus: rec.get("accountStatus") as string | null
+    };
+    if (canVote(ref)) return [ref.id];
+  }
+  const siblings = await session.run(
+    `
+    MATCH (c:Person {id: $requesterId})-[:SIBLING_OF|FULL_SIBLING_OF|HALF_SIBLING_OF]-(s:Person)
+    WHERE s.id <> $otherId AND s.id <> $requesterId
+    RETURN DISTINCT s.id AS id, s.vitalStatus AS vitalStatus, s.accountStatus AS accountStatus
+    `,
+    { requesterId, otherId }
+  );
+  return siblings.records
+    .map((r) => ({
+      id: r.get("id") as string,
+      vitalStatus: r.get("vitalStatus") as string | null,
+      accountStatus: r.get("accountStatus") as string | null
+    }))
+    .filter(canVote)
+    .map((p) => p.id)
+    .sort();
+}
+
 /** Parents, children, and siblings (sisters and brothers, including half). */
 export async function isDirectKin(
   session: Session,
@@ -288,12 +332,14 @@ export async function createRelationshipRequest(
 }> {
   const { type, requesterId, fromPersonId, toPersonId, appellation, partyConflictCodes } = input;
   const anchorPersonId = requesterId === fromPersonId ? toPersonId : fromPersonId;
-  // Un mariage est affiché dès qu'un des deux partenaires le déclare : pas d'attente de l'avis des autres.
-  // (Les règles d'incompatibilité sont toujours vérifiées avant, et chacun des deux peut retirer le lien.)
-  // Ajout d'un parent (je suis l'enfant) : seul l'autre parent, sinon les frères et sœurs directs, valident.
+  // Couple : la personne concernée (si elle a un compte) accepte ; sinon les frères et sœurs directs ;
+  // sinon c'est immédiat. Parent : l'autre parent, sinon les frères et sœurs directs, sinon immédiat.
+  // Dans les deux cas le lien est affiché en « provisoire » au demandeur en attendant la validation.
   const isParentLinkByChild = PARENT_LINK_TYPES.has(type) && toPersonId === requesterId;
-  const requiredApprovers = SPOUSE_TYPES.has(type)
-    ? []
+  const isSpouseLinkByParty =
+    SPOUSE_TYPES.has(type) && (fromPersonId === requesterId || toPersonId === requesterId);
+  const requiredApprovers = isSpouseLinkByParty
+    ? await getSpouseLinkApprovers(session, requesterId, anchorPersonId)
     : isParentLinkByChild
       ? await getParentLinkApprovers(session, requesterId, fromPersonId)
       : await getRequiredApprovers(session, requesterId, anchorPersonId);
