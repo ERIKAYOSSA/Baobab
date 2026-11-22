@@ -199,7 +199,7 @@ export function DiscoverPage() {
     }
   };
 
-  // Suggestions pendant la saisie du nom : « er » → les noms qui commencent par « er ».
+  // Suggestions pendant la : « er » → les noms qui commencent par « er ».
   useEffect(() => {
     const q = nameQuery.trim();
     if (useMocks || q.length < 2) {
