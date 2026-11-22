@@ -126,6 +126,7 @@ function mapNode(node: FamilyTreeNode, edges: FamilyTreeEdge[], meId: string): P
     siblingIds: siblingIds.length ? siblingIds : undefined,
     provisional: provisionalEdge ? true : undefined,
     awaitingFrom: provisionalEdge?.awaitingFrom?.length ? provisionalEdge.awaitingFrom : undefined,
+    awaitingYou: provisionalEdge?.awaitingYou ? true : undefined,
     createdBy: node.createdBy ?? undefined,
     unclaimed: node.accountStatus === "unclaimed",
     ...profile,

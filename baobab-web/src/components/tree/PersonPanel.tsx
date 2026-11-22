@@ -138,9 +138,15 @@ export function PersonPanel({ person, onClose, onEnrich, onLegacy, onAdd, onRemo
 
         {person.provisional && (
           <p className="mt-3 rounded-xl border border-dashed border-accent bg-accent/10 px-3 py-2 text-xs text-foreground">
-            {person.awaitingFrom?.length
-              ? tr("Lien provisoire : en attente de l'approbation de {names}.", { names: person.awaitingFrom.join(", ") })
-              : tr("Lien provisoire : en attente d'approbation.")}
+            {person.awaitingYou
+              ? person.awaitingFrom?.length
+                ? tr("Lien provisoire : en attente de ton approbation et de celle de {names}.", {
+                    names: person.awaitingFrom.join(", "),
+                  })
+                : tr("Lien provisoire : en attente de ton approbation (voir tes notifications).")
+              : person.awaitingFrom?.length
+                ? tr("Lien provisoire : en attente de l'approbation de {names}.", { names: person.awaitingFrom.join(", ") })
+                : tr("Lien provisoire : en attente d'approbation.")}
           </p>
         )}
 

@@ -551,4 +551,6 @@ export const EN_PHRASES: Record<string, string> = {
   "Provisoire": "Provisional",
   "Lien provisoire : en attente de l'approbation de {names}.": "Provisional link: waiting for approval from {names}.",
   "Lien provisoire : en attente d'approbation.": "Provisional link: waiting for approval.",
+  "Lien provisoire : en attente de ton approbation (voir tes notifications).": "Provisional link: waiting for your approval (see your notifications).",
+  "Lien provisoire : en attente de ton approbation et de celle de {names}.": "Provisional link: waiting for your approval and for {names}.",
 };

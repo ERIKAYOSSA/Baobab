@@ -1,6 +1,6 @@
 import { Fragment, createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { LOCALES, TRANSLATIONS, type Locale } from "./translations";
-import { EN_PHRASES } from "./phrases_en";
+import { EN_PHRASES } from "./phrases.en";
 
 const STORAGE_KEY = "baobab.locale";
 

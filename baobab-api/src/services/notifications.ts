@@ -1,7 +1,29 @@
 import { Session } from "neo4j-driver";
 import { listPendingForApprover } from "./familyApproval";
 
+/**
+ * Une personne nommée dans une demande (ex. une mère ajoutée par son enfant avant d'avoir un compte)
+ * doit pouvoir la voir et la confirmer dès qu'elle a un compte actif.
+ */
+async function attachPartyApprovals(session: Session, personId: string) {
+  await session.run(
+    `
+    MATCH (me:Person {id: $personId})
+    WHERE coalesce(me.accountStatus, "active") = "active"
+      AND coalesce(me.vitalStatus, "alive") <> "deceased"
+      AND me.phone IS NOT NULL
+    MATCH (req:RelationshipRequest {status: "pending"})
+    WHERE (req.fromPersonId = $personId OR req.toPersonId = $personId)
+      AND req.requesterId <> $personId
+      AND NOT EXISTS { MATCH (me)-[:MUST_APPROVE]->(req) }
+    CREATE (me)-[:MUST_APPROVE {status: "pending", createdAt: datetime()}]->(req)
+    `,
+    { personId }
+  );
+}
+
 export async function getNotifications(session: Session, personId: string) {
+  await attachPartyApprovals(session, personId);
   const pendingApprovals = await listPendingForApprover(session, personId);
 
   const myRequests = await session.run(

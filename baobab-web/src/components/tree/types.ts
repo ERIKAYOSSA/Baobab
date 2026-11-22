@@ -27,6 +27,8 @@ export type Person = {
   /** Parent ajouté mais pas encore validé : affiché de façon provisoire. */
   provisional?: boolean;
   awaitingFrom?: string[];
+  /** C'est à moi d'approuver ce lien (voir Notifications). */
+  awaitingYou?: boolean;
   /** Naissance multiple (jumeaux, triplés…), rang de naissance et signe distinctif. */
   multipleBirth?: "twin" | "triplet" | "quadruplet" | "quintuplet";
   birthRank?: number;

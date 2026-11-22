@@ -16,6 +16,8 @@ export type FamilyTreeEdge = {
   provisional?: boolean;
   /** La personne affichée en provisoire (l'autre partie, pas celui qui consulte). */
   provisionalPersonId?: string;
+  /** Vrai si c'est le consultant lui-même qui doit encore approuver ce lien. */
+  awaitingYou?: boolean;
   requestId?: string;
   awaitingFrom?: string[];
 };
@@ -216,13 +218,17 @@ export async function buildFamilyTree(
   if (viewerId) {
     const pending = await session.run(
       `
-      MATCH (req:RelationshipRequest {requesterId: $viewerId, status: "pending"})
-      WHERE req.type IN $types AND (req.toPersonId IN $nodeIds OR req.fromPersonId IN $nodeIds)
+      MATCH (req:RelationshipRequest {status: "pending"})
+      WHERE req.type IN $types
+        AND (req.requesterId = $viewerId OR req.fromPersonId = $viewerId OR req.toPersonId = $viewerId)
+        AND (req.toPersonId IN $nodeIds OR req.fromPersonId IN $nodeIds)
       OPTIONAL MATCH (approver:Person)-[a:MUST_APPROVE]->(req)
       WHERE a.status = "pending"
-      WITH req, collect(approver.firstName + " " + approver.lastName) AS awaiting
+      WITH req, collect(approver) AS approvers
       MATCH (fromP:Person {id: req.fromPersonId}), (toP:Person {id: req.toPersonId})
-      RETURN req.id AS requestId, req.type AS type, fromP, toP, awaiting
+      RETURN req.id AS requestId, req.type AS type, fromP, toP,
+             [x IN approvers WHERE x.id <> $viewerId | x.firstName + " " + x.lastName] AS awaiting,
+             any(x IN approvers WHERE x.id = $viewerId) AS awaitingYou
       `,
       {
         viewerId,
@@ -251,7 +257,8 @@ export async function buildFamilyTree(
         // La personne « provisoire » est l'autre partie, pas le consultant.
         provisionalPersonId: fromPersonId === viewerId ? toPersonId : fromPersonId,
         requestId: record.get("requestId") as string,
-        awaitingFrom: (record.get("awaiting") as string[]).filter(Boolean)
+        awaitingFrom: (record.get("awaiting") as string[]).filter(Boolean),
+        awaitingYou: Boolean(record.get("awaitingYou"))
       });
     }
   }
