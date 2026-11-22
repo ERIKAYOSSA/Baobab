@@ -1,4 +1,4 @@
-import type { Person } from "@/components/tree/types";
+import type { Person } from "../../components/tree/types";
 import type { ApiPerson, FamilyTreeEdge, FamilyTreeNode, FamilyTreeResult, MaritalStatus } from "./types";
 
 const PARENT_TYPES = new Set(["PARENT_OF", "FATHER_OF", "MOTHER_OF"]);
