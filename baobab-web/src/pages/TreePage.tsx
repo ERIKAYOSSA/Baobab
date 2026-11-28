@@ -3,11 +3,13 @@ import { Settings2, Globe, Loader2 } from "lucide-react";
 import { FamilyTree } from "../components/tree/FamilyTree";
 import { PersonPanel } from "../components/tree/PersonPanel";
 import { AddRelativeSheet } from "../components/tree/AddRelativeSheet";
+import { ConfirmSheet } from "../components/tree/ConfirmSheet";
 import { toast } from "sonner";
 import { SAMPLE_PEOPLE, type Person } from "../components/tree/types";
 import { useI18n, tr } from "../lib/i18n/I18nProvider";
 import { useAuth } from "../lib/auth/AuthProvider";
-import { getFamilyTree, mapFamilyTreeToPeople } from "../lib/api";
+import { ApiError, deleteRelative, getFamilyTree, mapFamilyTreeToPeople, removeLinksWith } from "../lib/api";
+import { subscribeChat } from "../lib/chatStream";
 
 export function TreePage() {
   const [depth, setDepth] = useState(-1);
@@ -18,6 +20,8 @@ export function TreePage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [addOpen, setAddOpen] = useState(false);
+  const [confirm, setConfirm] = useState<null | "link" | "relative">(null);
+  const [removing, setRemoving] = useState(false);
   const [reloadKey, setReloadKey] = useState(0);
   const { t, locale } = useI18n();
   const { person, isAuthenticated, useMocks } = useAuth();
@@ -78,12 +82,57 @@ export function TreePage() {
   const descendantDepth = Math.max(0, depth);
   const depthLabel = depth === 0 ? "Moi" : depth < 0 ? `N${depth}` : `N+${depth}`;
 
+  // Temps réel : quand un lien change d'état, l'arbre se recharge.
+  useEffect(() => {
+    if (useMocks || !isAuthenticated) return;
+    return subscribeChat((event) => {
+      if (event.type === "notify" && event.kind === "request_updated") setReloadKey((k) => k + 1);
+    });
+  }, [useMocks, isAuthenticated]);
+
   const openAdd = () => {
     if (useMocks || !isAuthenticated || !person) {
       toast.error(tr("Connecte-toi pour enrichir ton arbre"));
       return;
     }
     setAddOpen(true);
+  };
+
+  const meNode = people.find((p) => p.id === meId);
+  // Lien direct entre moi et la personne ouverte (parent, enfant, conjoint, fratrie).
+  const hasDirectLink =
+    !!selected &&
+    !!meNode &&
+    selected.id !== meId &&
+    (meNode.fatherId === selected.id ||
+      meNode.motherId === selected.id ||
+      selected.fatherId === meId ||
+      selected.motherId === meId ||
+      Boolean(meNode.spouseIds?.includes(selected.id)) ||
+      Boolean(meNode.coWifeIds?.includes(selected.id)) ||
+      Boolean(meNode.siblingIds?.includes(selected.id)) ||
+      Boolean(selected.siblingIds?.includes(meId)));
+  const canDeleteRelative =
+    !!selected && selected.id !== meId && Boolean(selected.unclaimed) && selected.createdBy === meId;
+  const canEdit = !useMocks && isAuthenticated;
+
+  const doRemove = async () => {
+    if (!selected || !confirm || removing) return;
+    setRemoving(true);
+    try {
+      if (confirm === "relative") await deleteRelative(selected.id);
+      else await removeLinksWith(selected.id);
+      toast.success(confirm === "relative" ? tr("Proche supprimé") : tr("Lien retiré"), {
+        description: tr("{name} n'est plus dans ta famille.", { name: selected.name }),
+      });
+      setConfirm(null);
+      setSelectedId(null);
+      setReloadKey((k) => k + 1);
+    } catch (e) {
+      toast.error(e instanceof ApiError ? e.message : tr("Impossible de retirer ce lien."), { duration: 6000 });
+    } finally {
+      setRemoving(false);
+    }
   };
 
   const onSelect = (id: string) => {
@@ -162,8 +211,33 @@ export function TreePage() {
       {selected && (
         <>
           <div aria-hidden className="h-[45dvh]" />
-          <PersonPanel person={selected} onClose={() => setSelectedId(null)} onEnrich={openAdd} onAdd={openAdd} />
+          <PersonPanel
+            person={selected}
+            onClose={() => setSelectedId(null)}
+            onEnrich={openAdd}
+            onAdd={openAdd}
+            onRemoveLink={canEdit && hasDirectLink ? () => setConfirm("link") : undefined}
+            onDeleteRelative={canEdit && canDeleteRelative ? () => setConfirm("relative") : undefined}
+          />
         </>
+      )}
+      {confirm && selected && (
+        <ConfirmSheet
+          title={
+            confirm === "relative"
+              ? tr("Supprimer {name} ?", { name: selected.name })
+              : tr("Retirer {name} de ta famille ?", { name: selected.name })
+          }
+          message={
+            confirm === "relative"
+              ? tr("Ce profil, que tu as ajouté, sera supprimé définitivement ainsi que tous ses liens.")
+              : tr("Les liens directs entre vous seront supprimés. Tu pourras les redéclarer plus tard. Le reste de l'arbre n'est pas modifié.")
+          }
+          confirmLabel={confirm === "relative" ? tr("Supprimer ce proche") : tr("Retirer de ma famille")}
+          busy={removing}
+          onConfirm={() => void doRemove()}
+          onCancel={() => setConfirm(null)}
+        />
       )}
       {addOpen && person && (
         <AddRelativeSheet

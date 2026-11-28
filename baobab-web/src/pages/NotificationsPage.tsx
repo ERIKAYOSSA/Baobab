@@ -24,6 +24,8 @@ import {
 } from "../lib/api";
 
 import { tr } from "../lib/i18n/I18nProvider";
+import { hasReply, readSeen, replyKey, writeSeen, type MyRequest } from "../lib/notificationsSeen";
+import { subscribeChat } from "../lib/chatStream";
 const demoItems = [
   {
     type: "link",
@@ -103,6 +105,14 @@ export function NotificationsPage() {
 
   useEffect(() => {
     void load();
+  }, [useMocks, isAuthenticated]);
+
+  // Temps réel : la liste se recharge dès qu'une demande arrive ou change d'état.
+  useEffect(() => {
+    if (useMocks || !isAuthenticated) return;
+    return subscribeChat((event) => {
+      if (event.type === "notify") void load();
+    });
   }, [useMocks, isAuthenticated]);
 
   // Les réponses affichées sont marquées comme vues après quelques secondes (ou en quittant la page).
@@ -252,9 +262,11 @@ export function NotificationsPage() {
                         <p className="mt-0.5 text-sm leading-snug text-foreground">
                           {relationSentence(r.relationshipType, r.from, r.to, person?.id)}
                         </p>
-                        {r.votes.length > 0 && (
+                        {r.votes.filter((v) => v.status !== "superseded").length > 0 && (
                           <ul className="mt-2 space-y-1">
-                            {r.votes.map((v) => (
+                            {r.votes
+                              .filter((v) => v.status !== "superseded")
+                              .map((v) => (
                               <li key={v.id} className="flex items-start gap-1.5 text-xs text-foreground">
                                 {v.status === "approved" ? (
                                   <Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" />
@@ -449,39 +461,6 @@ function PersonAvatar({ person }: { person: NotificationPerson | null | undefine
       {letters}
     </div>
   );
-}
-
-type MyRequest = NotificationsPayload["myRequests"][number];
-
-const SEEN_KEY = "baobab.seenReplies.v1";
-
-function readSeen(): Set<string> {
-  try {
-    const raw = localStorage.getItem(SEEN_KEY);
-    return new Set(raw ? (JSON.parse(raw) as string[]) : []);
-  } catch {
-    return new Set();
-  }
-}
-
-function writeSeen(keys: string[]) {
-  try {
-    const all = readSeen();
-    keys.forEach((k) => all.add(k));
-    localStorage.setItem(SEEN_KEY, JSON.stringify([...all].slice(-200)));
-  } catch {
-    /* stockage indisponible : on ignore */
-  }
-}
-
-/** Au moins un membre a répondu (ou la demande est close). */
-function hasReply(r: MyRequest): boolean {
-  return r.totalVotes > 0 && (r.totalVotes - r.pendingVotes > 0 || r.status !== "pending");
-}
-
-/** Change quand une nouvelle réponse arrive : c'est ce qui déclenche le badge « Nouveau ». */
-function replyKey(r: MyRequest): string {
-  return `${r.requestId}:${r.status}:${r.totalVotes - r.pendingVotes}`;
 }
 
 function replyHeadline(status: string): string {

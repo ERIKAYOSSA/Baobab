@@ -7,7 +7,8 @@ import { getChatStreamTicket, type ChatMessage } from "../lib/api";
  */
 export type ChatStreamEvent =
   | { type: "open" }
-  | { type: "message"; conversationId: string; message: ChatMessage };
+  | { type: "message"; conversationId: string; message: ChatMessage }
+  | { type: "notify"; kind: "approval_required" | "request_updated" | string; requestId?: string; status?: string; finalized?: boolean };
 
 type Listener = (event: ChatStreamEvent) => void;
 
@@ -54,6 +55,19 @@ async function connect() {
         emit({ type: "message", conversationId: payload.conversationId, message: payload.message });
       } catch {
         /* message illisible : ignoré */
+      }
+    });
+    es.addEventListener("notify", (ev) => {
+      try {
+        const payload = JSON.parse((ev as MessageEvent<string>).data) as {
+          kind: string;
+          requestId?: string;
+          status?: string;
+          finalized?: boolean;
+        };
+        emit({ type: "notify", ...payload });
+      } catch {
+        /* événement illisible : ignoré */
       }
     });
     es.onerror = () => {

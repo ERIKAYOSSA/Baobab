@@ -6,6 +6,7 @@ import { useAuth } from "../lib/auth/AuthProvider";
 import { getChatUnread, getNotifications } from "../lib/api";
 import { countUnseenReplies } from "../lib/notificationsSeen";
 import { subscribeChat } from "../lib/chatStream";
+import { toast } from "sonner";
 
 type Tab = {
   to: "/tree" | "/discover" | "/chat" | "/notifications" | "/me";
@@ -21,9 +22,9 @@ export function BottomNav() {
   const [chatCount, setChatCount] = useState(0);
 
   const tabs: Tab[] = [
-    { to: "/tree", label: t("nav.tree"), icon: TreePine },
     { to: "/chat", label: tr("Discussions"), icon: MessageCircle },
     { to: "/discover", label: t("nav.discover"), icon: Compass },
+    { to: "/tree", label: t("nav.tree"), icon: TreePine },
     { to: "/notifications", label: t("nav.notifications"), icon: Bell },
     { to: "/me", label: t("nav.me"), icon: User },
   ];
@@ -65,10 +66,25 @@ export function BottomNav() {
     };
   }, [isAuthenticated, useMocks, pathname]);
 
-  // Pastille « Discussions » mise à jour dès qu'un message arrive.
+  // Pastilles et alertes mises à jour dès qu'un message ou une demande arrive.
   useEffect(() => {
     if (useMocks || !isAuthenticated) return;
-    return subscribeChat(() => {
+    return subscribeChat((event) => {
+      if (event.type === "notify") {
+        void getNotifications()
+          .then((res) =>
+            setPendingCount((res.data.summary.pendingApprovalsCount ?? 0) + countUnseenReplies(res.data.myRequests)),
+          )
+          .catch(() => undefined);
+        if (event.kind === "approval_required") {
+          toast(tr("Nouvelle demande de lien"), { description: tr("Ouvre tes notifications pour répondre.") });
+        } else if (event.kind === "request_updated" && event.status === "approved" && event.finalized) {
+          toast.success(tr("Un lien familial vient d'être confirmé"));
+        } else if (event.kind === "request_updated" && event.status === "rejected") {
+          toast(tr("Une de tes demandes a été refusée"));
+        }
+        return;
+      }
       void getChatUnread()
         .then((res) => setChatCount(res.data.unread))
         .catch(() => undefined);
@@ -82,6 +98,25 @@ export function BottomNav() {
           const active = pathname.startsWith(tab.to);
           const Icon = tab.icon;
           const badge = active ? 0 : tab.to === "/notifications" ? pendingCount : tab.to === "/chat" ? chatCount : 0;
+          if (tab.to === "/tree") {
+            // Onglet central : plus grand, en relief au-dessus de la barre.
+            return (
+              <NavLink
+                key={tab.to}
+                to={tab.to}
+                className="group relative -mt-7 flex min-h-11 flex-[1.25] flex-col items-center justify-end gap-0.5 pb-1 text-[12px] font-semibold"
+              >
+                <span
+                  className={`flex h-16 w-16 items-center justify-center rounded-full border-4 border-background shadow-[0_8px_20px_-6px_rgba(41,21,8,0.45)] transition active:scale-95 ${
+                    active ? "bg-primary text-primary-foreground" : "bg-primary/90 text-primary-foreground"
+                  }`}
+                >
+                  <Icon className="h-8 w-8" strokeWidth={2.2} />
+                </span>
+                <span className={active ? "text-primary" : "text-foreground"}>{tab.label}</span>
+              </NavLink>
+            );
+          }
           return (
             <NavLink
               key={tab.to}

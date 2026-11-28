@@ -2,6 +2,7 @@ import { randomUUID } from "crypto";
 import { Session } from "neo4j-driver";
 import type { UserRelationshipType } from "../schemas/relationship";
 import { syncConsanguinityRelationships } from "./consanguinitySync";
+import { pushToPeople } from "./chatStream";
 
 const FAMILY_GRAPH_RELS =
   "PARENT_OF|FATHER_OF|MOTHER_OF|HUSBAND_OF|WIFE_OF|MARRIED_TO|CO_WIFE_OF|SIBLING_OF|FULL_SIBLING_OF|HALF_SIBLING_OF|COUSIN_OF";
@@ -445,10 +446,71 @@ export async function createRelationshipRequest(
     }
   );
 
+  // Les approbateurs connectés voient la demande apparaître aussitôt.
+  pushToPeople(requiredApprovers, "notify", { kind: "approval_required", requestId });
+
   return { requestId, status: "pending", requiredApprovers, autoApproved: false, appellation };
 }
 
-export async function decideOnRequest(
+/**
+ * Règle le sort d'une demande en attente à partir de la décision d'une personne directement concernée.
+ * - accord : le lien est confirmé, les votes encore en attente sont mis de côté ;
+ * - refus : la demande est refusée.
+ * Renvoie null si la demande n'est plus en attente, ou si le cas relève des conflits à arbitrer.
+ */
+export async function completeByParty(
+  session: Session,
+  requestId: string,
+  decision: "approved" | "rejected"
+): Promise<{
+  status: string;
+  finalized: boolean;
+  consanguinity?: { fullSiblings: number; halfSiblings: number; cousins: number };
+} | null> {
+  const found = await session.run(
+    `
+    MATCH (req:RelationshipRequest {id: $requestId, status: "pending"})
+    RETURN req.type AS type, req.fromPersonId AS fromId, req.toPersonId AS toId, req.conflictCodes AS conflictCodes
+    `,
+    { requestId }
+  );
+  const row = found.records[0];
+  if (!row) return null;
+  const conflictCodes = (row.get("conflictCodes") as string[] | null) ?? [];
+  if (decision === "approved" && conflictCodes.some((code) => PARTY_CONFLICT_CODES.has(code))) {
+    return null; // conflit entre points de vue : procédure habituelle
+  }
+
+  await session.run(
+    `
+    MATCH ()-[a:MUST_APPROVE {status: "pending"}]->(:RelationshipRequest {id: $requestId})
+    SET a.status = "superseded", a.decidedAt = datetime()
+    `,
+    { requestId }
+  );
+
+  if (decision === "rejected") {
+    await session.run(
+      `MATCH (req:RelationshipRequest {id: $requestId}) SET req.status = "rejected", req.decidedAt = datetime()`,
+      { requestId }
+    );
+    return { status: "rejected", finalized: true };
+  }
+
+  const { consanguinity } = await createConfirmedRelationship(
+    session,
+    row.get("type") as UserRelationshipType,
+    row.get("fromId") as string,
+    row.get("toId") as string
+  );
+  await session.run(
+    `MATCH (req:RelationshipRequest {id: $requestId}) SET req.status = "approved", req.decidedAt = datetime()`,
+    { requestId }
+  );
+  return { status: "approved", finalized: true, consanguinity };
+}
+
+async function decideOnRequestCore(
   session: Session,
   requestId: string,
   approverId: string,
@@ -461,7 +523,8 @@ export async function decideOnRequest(
   const check = await session.run(
     `
     MATCH (approver:Person {id: $approverId})-[a:MUST_APPROVE]->(req:RelationshipRequest {id: $requestId})
-    RETURN req.status AS requestStatus, a.status AS approvalStatus
+    RETURN req.status AS requestStatus, a.status AS approvalStatus,
+           req.fromPersonId AS fromId, req.toPersonId AS toId, req.requesterId AS requesterId
     `,
     { requestId, approverId }
   );
@@ -486,6 +549,16 @@ export async function decideOnRequest(
     `,
     { requestId, approverId, decision }
   );
+
+  // La personne directement concernée (ex. la mère nommée) a le dernier mot : son accord (ou son refus)
+  // suffit, les autres votes en attente ne sont plus nécessaires.
+  const fromId = check.records[0].get("fromId") as string;
+  const toId = check.records[0].get("toId") as string;
+  const requesterOfRequest = check.records[0].get("requesterId") as string;
+  if ((approverId === fromId || approverId === toId) && approverId !== requesterOfRequest) {
+    const settled = await completeByParty(session, requestId, decision);
+    if (settled) return settled;
+  }
 
   const counts = await session.run(
     `
@@ -630,3 +703,38 @@ export async function listPendingForApprover(session: Session, approverId: strin
 }
 
 export { FAMILY_GRAPH_RELS };
+
+/** Enregistre un vote, puis prévient aussitôt (en temps réel) le demandeur et les autres approbateurs. */
+export async function decideOnRequest(
+  session: Session,
+  requestId: string,
+  approverId: string,
+  decision: "approved" | "rejected"
+) {
+  const outcome = await decideOnRequestCore(session, requestId, approverId, decision);
+  try {
+    const r = await session.run(
+      `
+      MATCH (req:RelationshipRequest {id: $requestId})
+      OPTIONAL MATCH (a:Person)-[:MUST_APPROVE]->(req)
+      RETURN req.requesterId AS requesterId, collect(DISTINCT a.id) AS approvers
+      `,
+      { requestId }
+    );
+    const rec = r.records[0];
+    if (rec) {
+      const people = [rec.get("requesterId") as string, ...(rec.get("approvers") as string[])].filter(
+        (id) => id && id !== approverId
+      );
+      pushToPeople(people, "notify", {
+        kind: "request_updated",
+        requestId,
+        status: outcome.status,
+        finalized: outcome.finalized
+      });
+    }
+  } catch {
+    /* le vote est déjà enregistré : l'envoi en direct est facultatif */
+  }
+  return outcome;
+}
