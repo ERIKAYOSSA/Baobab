@@ -22,8 +22,8 @@ export function BottomNav() {
   const [chatCount, setChatCount] = useState(0);
 
   const tabs: Tab[] = [
-    { to: "/chat", label: tr("Discussions"), icon: MessageCircle },
     { to: "/discover", label: t("nav.discover"), icon: Compass },
+    { to: "/chat", label: tr("Discussions"), icon: MessageCircle },
     { to: "/tree", label: t("nav.tree"), icon: TreePine },
     { to: "/notifications", label: t("nav.notifications"), icon: Bell },
     { to: "/me", label: t("nav.me"), icon: User },
